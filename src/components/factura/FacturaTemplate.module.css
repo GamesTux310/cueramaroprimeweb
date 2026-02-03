@@ -1,0 +1,427 @@
+/* FacturaTemplate.module.css - Estilos idénticos a la plantilla "Nota Crédito" */
+
+/* Contenedor principal - Tamaño carta exacto para PDF */
+.facturaContainer {
+  width: 720px; /* Ancho reducido para caber en carta */
+  min-height: 980px; /* Altura mínima */
+  background: white;
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  font-size: 10px;
+  color: #333;
+  padding: 20px 25px;
+  box-sizing: border-box;
+  margin: 0 auto;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.paraImpresion {
+  box-shadow: none;
+  margin: 0;
+}
+
+/* ========== ENCABEZADO ========== */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  gap: 15px;
+  flex-shrink: 0;
+}
+
+.empresaInfo {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  flex: 1;
+}
+
+.logoContainer {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.logo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.empresaDatos {
+  flex: 1;
+}
+
+.empresaNombre {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  margin: 0 0 3px 0;
+}
+
+.empresaDireccion,
+.empresaColonia,
+.empresaCP {
+  margin: 2px 0;
+  font-size: 11px;
+  color: #555;
+}
+
+/* Panel derecho - Nota de Crédito */
+.notaCreditoPanel {
+  width: 280px;
+  border: 1px solid #ccc;
+}
+
+.notaCreditoTitulo {
+  background-color: #F7941D; /* Naranja */
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+  text-align: center;
+  padding: 8px;
+}
+
+.notaCreditoInfo {
+  background-color: #E8F4FD; /* Azul muy claro */
+  padding: 8px;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+  border-bottom: 1px solid #d0e8f8;
+}
+
+.infoRow:last-child {
+  border-bottom: none;
+}
+
+.infoLabel {
+  font-weight: bold;
+  font-size: 9px;
+  color: #333;
+}
+
+.infoValue {
+  font-size: 9px;
+  color: #333;
+  text-align: right;
+}
+
+/* ========== DATOS DEL CLIENTE ========== */
+.clienteSection {
+  display: flex;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+}
+
+.clienteTitulo {
+  background-color: #7DB3DD; /* Azul */
+  color: white;
+  font-weight: bold;
+  font-size: 8px;
+  padding: 5px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.1;
+  min-width: 18px;
+}
+
+.clienteGrid {
+  flex: 1;
+  padding: 8px;
+  background-color: #E8F4FD;
+}
+
+.clienteRow {
+  display: flex;
+  padding: 3px 0;
+  border-bottom: 1px solid #d0e8f8;
+}
+
+.clienteRow:last-child {
+  border-bottom: none;
+}
+
+.clienteLabel {
+  width: 80px;
+  font-weight: bold;
+  font-size: 9px;
+  color: #333;
+}
+
+.clienteValue {
+  flex: 1;
+  font-size: 9px;
+  color: #333;
+  border-bottom: 1px solid #999;
+  min-height: 14px;
+}
+
+.vendedorInfo {
+  width: 180px;
+  padding: 8px;
+  background-color: #E8F4FD;
+  border-left: 1px solid #ccc;
+}
+
+.vendedorRow {
+  display: flex;
+  padding: 3px 0;
+  border-bottom: 1px solid #d0e8f8;
+}
+
+.vendedorRow:last-child {
+  border-bottom: none;
+}
+
+.vendedorLabel {
+  width: 70px;
+  font-weight: bold;
+  font-size: 9px;
+  color: #333;
+}
+
+.vendedorValue {
+  flex: 1;
+  font-size: 9px;
+  color: #333;
+}
+
+/* ========== TABLA DE PRODUCTOS ========== */
+.productosSection {
+  margin-bottom: 8px;
+}
+
+.productosTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+
+.productosTable thead tr {
+  background-color: #7DB3DD; /* Azul */
+  color: white;
+}
+
+.productosTable th {
+  padding: 5px 4px;
+  font-weight: bold;
+  text-align: center;
+  border: 1px solid #5a9bc9;
+  font-size: 9px;
+}
+
+.thCantidad { width: 70px; }
+.thCodigo { width: 80px; }
+.thUM { width: 50px; }
+.thDescripcion { width: auto; }
+.thPrecio { width: 80px; }
+.thImporte { width: 80px; }
+
+.productosTable td {
+  padding: 4px 4px;
+  border: 1px solid #ccc;
+  min-height: 16px;
+  font-size: 9px;
+}
+
+.tdCentro { text-align: center; }
+.tdDerecha { text-align: right; }
+.tdDescripcion { text-align: left; }
+
+.productosTable tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+/* ========== TOTALES ========== */
+.totalesSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.importeLetra {
+  flex: 1;
+  padding-right: 20px;
+}
+
+.importeLetraLabel {
+  font-weight: bold;
+  font-size: 10px;
+  margin-bottom: 5px;
+}
+
+.importeLetraTexto {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.conLetra {
+  font-weight: bold;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.letraValor {
+  font-size: 9px;
+  color: #333;
+  border-bottom: 1px solid #999;
+  flex: 1;
+  min-height: 14px;
+}
+
+.totalesBox {
+  width: 180px;
+  border: 1px solid #ccc;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-bottom: 1px solid #ccc;
+  background-color: #E8F4FD;
+}
+
+.totalRow:last-child {
+  border-bottom: none;
+  background-color: #7DB3DD;
+  color: white;
+  font-weight: bold;
+}
+
+.totalLabel {
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.totalValue {
+  font-size: 10px;
+}
+
+/* ========== SECCIÓN PAGARÉ ========== */
+.pagareSection {
+  display: flex;
+  gap: 15px;
+  border: 2px solid #333;
+  padding: 12px;
+  margin-top: 15px;
+  background-color: #fafafa;
+}
+
+.qrContainer {
+  width: 100px;
+  height: 100px;
+  flex-shrink: 0;
+}
+
+.qrCode {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.pagareContent {
+  flex: 1;
+}
+
+.pagareTitulo {
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.pagareTexto {
+  font-size: 10px;
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.pagareTextoLegal {
+  font-size: 9px;
+  margin: 0 0 15px 0;
+  color: #555;
+  line-height: 1.4;
+}
+
+.buenoPor {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.buenoPorLabel {
+  font-weight: bold;
+  font-size: 11px;
+}
+
+.buenoPorValue {
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+  border: 1px solid #333;
+  padding: 5px 15px;
+  min-width: 100px;
+  text-align: right;
+}
+
+.firmaSection {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.firmaLinea {
+  width: 200px;
+  border-bottom: 1px solid #333;
+  margin: 0 auto 5px auto;
+}
+
+.firmaTexto {
+  font-size: 9px;
+  color: #555;
+  margin: 0;
+}
+
+/* ========== MENSAJE LEGAL SAT ========== */
+.mensajeLegal {
+  text-align: center;
+  font-size: 8px;
+  color: #666;
+  padding: 8px 10px;
+  margin-top: 10px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-style: italic;
+}
+
+/* ========== ESTILOS DE IMPRESIÓN ========== */
+@media print {
+  .facturaContainer {
+    width: 100%;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .productosTable,
+  .clienteSection,
+  .pagareSection {
+    page-break-inside: avoid;
+  }
+}

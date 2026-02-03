@@ -1,0 +1,388 @@
+/* ========================================
+   Panel Financiero - Estilos
+   ======================================== */
+
+/* Header */
+.pageHeader {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-lg);
+  padding: 24px 32px;
+  margin-bottom: 24px;
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.backButton {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.1);
+  transition: all var(--transition-fast);
+}
+
+.backButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: white;
+}
+
+.headerIcon {
+  font-size: 2.5rem;
+}
+
+.headerTitle h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.headerTitle p {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.seccionTitulo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Flujo de Caja */
+.flujoCajaSection {
+  margin-bottom: 24px;
+}
+
+.flujoCajaCard {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+}
+
+.flujoCajaCard .seccionTitulo {
+  margin-bottom: 20px;
+}
+
+.flujoGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.flujoItem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+}
+
+.flujoItem.flujoTotal {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border: 2px solid rgba(16, 185, 129, 0.2);
+}
+
+.flujoIcono {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.flujoInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.flujoLabel {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.flujoMonto {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+/* Métricas Section */
+.metricasSection {
+  margin-bottom: 24px;
+}
+
+.metricasGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.metricaCard {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+}
+
+.metricaTitulo {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 16px;
+}
+
+.metricaFilas {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.metricaFila {
+  display: flex;
+  align-items: center;
+  padding: 12px 14px;
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+}
+
+.metricaPeriodo {
+  width: 70px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.metricaValor {
+  flex: 1;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.metricaValor.positivo { color: #10b981; }
+.metricaValor.negativo { color: #ef4444; }
+
+.metricaCant {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  background: var(--gray-200);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+}
+
+/* Cuentas por Cobrar */
+.cuentasSection {
+  margin-bottom: 24px;
+}
+
+.cuentasCard {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+}
+
+.cuentasHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.cuentasTotal {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ef4444;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  gap: 8px;
+}
+
+.emptyState span {
+  font-size: 2rem;
+  opacity: 0.5;
+}
+
+.deudoresList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.deudorItem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+}
+
+.deudorAvatar {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+}
+
+.deudorInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.deudorNombre {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.deudorTel {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.deudorSaldo {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ef4444;
+}
+
+.verMasLink {
+  display: block;
+  text-align: center;
+  padding: 12px;
+  margin-top: 8px;
+  color: var(--primary-600);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: var(--primary-50);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.verMasLink:hover {
+  background: var(--primary-100);
+}
+
+/* Accesos Rápidos */
+.accesosSection {
+  margin-bottom: 24px;
+}
+
+.accesosSection .seccionTitulo {
+  margin-bottom: 16px;
+  color: white;
+}
+
+.accesosGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.accesoCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 16px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  box-shadow: var(--shadow-card);
+  transition: all var(--transition-fast);
+}
+
+.accesoCard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.accesoIcon {
+  font-size: 2rem;
+}
+
+.accesoLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .flujoGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .metricasGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .accesosGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .flujoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .accesosGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .accesoCard {
+    padding: 16px;
+  }
+
+  .accesoIcon {
+    font-size: 1.5rem;
+  }
+}

@@ -1,0 +1,1002 @@
+/* ========================================
+   Módulo de Facturas - Estilos
+   ======================================== */
+
+/* Header */
+.pageHeader {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-lg);
+  padding: 24px 32px;
+  margin-bottom: 24px;
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.backButton {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.1);
+  transition: all var(--transition-fast);
+}
+
+.backButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: white;
+}
+
+.headerIcon {
+  font-size: 2.5rem;
+}
+
+.headerTitle h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.headerTitle p {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.addButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: white;
+  color: var(--primary-700);
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-md);
+}
+
+.addButton:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Estadísticas */
+.statsSection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: var(--shadow-card);
+}
+
+.statIcon {
+  width: 50px;
+  height: 50px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.statInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.statLabel {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* Filtros */
+.filtersSection {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.searchBox {
+  flex: 1;
+  min-width: 300px;
+  position: relative;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 14px 14px 14px 48px;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--shadow-card);
+  transition: all var(--transition-fast);
+}
+
+.searchInput:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3), var(--shadow-card);
+}
+
+.filterSelect {
+  padding: 14px 20px;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+}
+
+/* Grid de Facturas */
+.facturasGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.emptyState {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.facturaCard {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+  transition: all var(--transition-normal);
+}
+
+.facturaCard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.cardHeaderLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.numeroFactura {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary-700);
+}
+
+.fechaFactura {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.estadoBadge {
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.estadoBadge.pagada {
+  background: var(--success-light);
+  color: #047857;
+}
+
+.estadoBadge.pendiente {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.clienteInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.clienteNombre {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.clienteTelefono {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.productosResumen {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.totalFactura {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--gray-100);
+}
+
+.totalMonto {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--primary-700);
+}
+
+.cardActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.btnAction {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--gray-100);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: 1rem;
+}
+
+.btnAction:hover {
+  background: var(--primary-100);
+  transform: scale(1.1);
+}
+
+/* Modal */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal {
+  background: white;
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-xl);
+}
+
+.modalPreview {
+  max-width: 800px;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 28px;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.modalHeader h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.closeButton {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--gray-100);
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all var(--transition-fast);
+}
+
+.closeButton:hover {
+  background: var(--gray-200);
+}
+
+.modalBody {
+  padding: 24px 28px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modalFooter {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 20px 28px;
+  border-top: 1px solid var(--gray-100);
+  background: var(--gray-50);
+}
+
+/* Lista de Ventas */
+.ventasList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.noVentas {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 40px 20px;
+}
+
+.ventaItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.ventaItem:hover {
+  background: var(--primary-50);
+  transform: translateX(4px);
+}
+
+.ventaInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ventaCliente {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ventaFecha {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.ventaTotal {
+  font-weight: 700;
+  color: var(--primary-700);
+}
+
+/* Vista Previa de Factura */
+.facturaPreview {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 32px;
+  background: white;
+}
+
+.previewHeader {
+  text-align: center;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--primary-600);
+}
+
+.previewHeader h1 {
+  font-size: 2rem;
+  color: var(--primary-700);
+  margin: 0 0 8px 0;
+}
+
+.previewHeader p {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.previewInfo {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.previewInfo h3 {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.previewInfo p {
+  margin: 4px 0;
+  color: var(--text-primary);
+}
+
+.previewTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+}
+
+.previewTable th {
+  background: var(--gray-50);
+  padding: 12px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.previewTable td {
+  padding: 12px;
+  border-bottom: 1px solid var(--gray-100);
+  color: var(--text-primary);
+}
+
+.previewTable tr:last-child td {
+  border-bottom: none;
+}
+
+.previewTotales {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+  padding-top: 16px;
+  border-top: 2px solid var(--gray-200);
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  min-width: 250px;
+  font-size: 0.95rem;
+}
+
+.totalRow.totalFinal {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--primary-700);
+  padding-top: 12px;
+  border-top: 2px solid var(--primary-600);
+}
+
+/* Detalle de Factura */
+.detalleFactura {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.detalleSection h4 {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detalleSection p {
+  margin: 4px 0;
+  color: var(--text-primary);
+}
+
+.productoDetalle {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.productoDetalle:last-child {
+  border-bottom: none;
+}
+
+.detalleTotales {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+}
+
+.detalleTotales div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.detalleTotal {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--primary-700);
+  padding-top: 12px;
+  margin-top: 8px;
+  border-top: 2px solid var(--gray-200);
+}
+
+/* Buttons */
+.btnPrimary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--primary-600);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btnPrimary:hover {
+  background: var(--primary-700);
+}
+
+.btnSecondary {
+  padding: 12px 24px;
+  background: var(--gray-100);
+  color: var(--text-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btnSecondary:hover {
+  background: var(--gray-200);
+}
+
+.btnDanger {
+  padding: 12px 24px;
+  background: var(--danger);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btnDanger:hover {
+  background: #dc2626;
+}
+
+/* Toast Notifications */
+.toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  background: white;
+  padding: 16px 20px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 9999;
+  min-width: 280px;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toast.success {
+  border-left: 4px solid #10b981;
+}
+
+.toast.error {
+  border-left: 4px solid #ef4444;
+}
+
+.toast.warning {
+  border-left: 4px solid #f59e0b;
+}
+
+.toastIcon {
+  font-size: 1.25rem;
+}
+
+.toastMessage {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Modal de Eliminación */
+.modalEliminar {
+  max-width: 500px;
+}
+
+.advertenciaEliminar {
+  text-align: center;
+  padding: 20px;
+  background: #fef2f2;
+  border-radius: var(--radius-md);
+  margin-bottom: 24px;
+}
+
+.advertenciaIcono {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.advertenciaEliminar p {
+  margin: 8px 0;
+  color: var(--text-primary);
+}
+
+.advertenciaTexto {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.confirmarInput {
+  margin-bottom: 24px;
+}
+
+.confirmarInput label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.confirmarInput input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  transition: all var(--transition-fast);
+}
+
+.confirmarInput input:focus {
+  outline: none;
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.eliminarActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.btnCancelar {
+  padding: 12px 24px;
+  background: var(--gray-100);
+  color: var(--text-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btnCancelar:hover {
+  background: var(--gray-200);
+}
+
+.btnConfirmarEliminar {
+  padding: 12px 24px;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btnConfirmarEliminar:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.btnConfirmarEliminar:disabled {
+  background: var(--gray-300);
+  color: var(--gray-500);
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .pageHeader {
+    padding: 16px 20px;
+  }
+
+  .headerContent {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .addButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .filtersSection {
+    flex-direction: column;
+  }
+
+  .searchBox {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .facturasGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .previewInfo {
+    grid-template-columns: 1fr;
+  }
+
+  .facturaPreview {
+    padding: 20px;
+  }
+}
+
+/* Estilos para formulario completo */
+.formularioCompleto {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.formSection {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #e0e0e0;
+}
+
+.formSection h3 {
+  margin: 0 0 16px 0;
+  color: #1e40af;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.formGroup label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.formGroup input,
+.formGroup select {
+  padding: 10px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.formGroup input:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.btnAddProduct {
+  padding: 8px 16px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500 ;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnAddProduct:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.productosTable {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tablaHeaderRow {
+  display: grid;
+  grid-template-columns: 80px 100px 80px 1fr 100px 120px 80px;
+  gap: 8px;
+  padding: 12px;
+  background: #1e40af;
+  color: white;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.tablaRow {
+  display: grid;
+  grid-template-columns: 80px 100px 80px 1fr 100px 120px 80px;
+  gap: 8px;
+  padding: 8px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  align-items: center;
+}
+
+.tablaCelda {
+  font-size: 13px;
+  padding: 4px;
+}
+
+.tablaCelda input,
+.tablaCelda select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.btnDeleteProduct {
+  padding: 6px 10px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.btnDeleteProduct:hover {
+  background: #dc2626;
+}
+
+.resumenTotales {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 400px;
+  margin-left: auto;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 15px;
+}
+
+.totalRow.totalFinal {
+  border-bottom: none;
+  border-top: 2px solid #1e40af;
+  margin-top: 8px;
+  padding-top: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e40af;
+}
+
+/* Modal más grande para el formulario completo */
+.modalLarge {
+  width: 95%;
+  max-width: 1200px;
+  max-height: 90vh;
+}
+
+.modalLarge .modalBody {
+  max-height: 75vh;
+  overflow-y: auto;
+}

@@ -1,0 +1,43 @@
+.container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.prefix {
+  position: absolute;
+  left: 12px;
+  color: #6b7280;
+  font-weight: 500;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db; /* gray-300 */
+  border-radius: 0.375rem; /* radius-md */
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  background-color: white;
+}
+
+/* Cuando se está editando y hay prefix */
+.container:has(.prefix) .input {
+  padding-left: 24px;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #3b82f6; /* primary-500 */
+  box-shadow: 0 0 0 3px #dbeafe; /* primary-100 */
+}
+
+/* Estilo cuando está formateado (no tiene foco) */
+.formatted {
+  color: #111827;
+  font-weight: 500;
+  text-align: right; /* Alinear números a la derecha es estándar en finanzas */
+}
