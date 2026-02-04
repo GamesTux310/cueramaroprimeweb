@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from './productos.module.css';
-import { getProductos, addProducto, updateProducto, saveProductos, actualizarStock, getProveedores, addCompra } from '@/lib/storage';
+import { getProductos, addProducto, updateProducto, saveProductos, actualizarStock, getProveedores, addCompra, getLotes, getCompras, getVentas } from '@/lib/storage';
 import ImageModal from '@/components/ImageModal';
 import CurrencyInput from '@/components/CurrencyInput';
 
@@ -30,6 +30,11 @@ export default function ProductosPage() {
   const [precioCompra, setPrecioCompra] = useState('');
   const [nuevoPrecioVenta, setNuevoPrecioVenta] = useState('');
   const [adjuntoCompra, setAdjuntoCompra] = useState(null); // 🆕 Adjunto de comprobante
+  
+  // 🆕 Estado para Modal Historial de Movimientos
+  const [mostrarModalHistorial, setMostrarModalHistorial] = useState(false);
+  const [productoHistorial, setProductoHistorial] = useState(null);
+  const [movimientosProducto, setMovimientosProducto] = useState([]);
   
   const [modalImagen, setModalImagen] = useState({ show: false, url: '' });
   
@@ -297,6 +302,67 @@ export default function ProductosPage() {
     setNuevoPrecioVenta(producto.precioVenta.toString());
     setAdjuntoCompra(null); // 🆕 Reset adjunto
     setMostrarModalStock(true);
+  };
+
+  // 🆕 Abrir historial de movimientos
+  const abrirHistorial = (producto) => {
+    setProductoHistorial(producto);
+    
+    // Obtener compras del producto
+    const compras = getCompras()
+      .filter(c => c.productoId === producto.id)
+      .map(c => ({
+        tipo: 'compra',
+        fecha: c.fecha,
+        cantidad: c.cantidad,
+        precio: c.precioCompra,
+        total: c.total,
+        proveedor: c.proveedorNombre,
+        adjunto: c.adjuntoURL,
+        icono: '🛒',
+        color: '#059669',
+      }));
+    
+    // Obtener ventas del producto
+    const ventasData = getVentas();
+    const ventas = [];
+    ventasData.forEach(v => {
+      const itemVendido = v.productos?.find(p => p.productoId === producto.id);
+      if (itemVendido) {
+        ventas.push({
+          tipo: 'venta',
+          fecha: v.fecha,
+          cantidad: itemVendido.cantidad,
+          precio: itemVendido.precioUnitario,
+          total: itemVendido.cantidad * itemVendido.precioUnitario,
+          cliente: v.clienteNombre || 'Venta directa',
+          costoReal: itemVendido.costoReal || 0,
+          utilidad: (itemVendido.cantidad * itemVendido.precioUnitario) - (itemVendido.costoReal || 0),
+          icono: '💰',
+          color: '#2563eb',
+        });
+      }
+    });
+    
+    // Obtener lotes activos del producto
+    const lotes = getLotes(producto.id).map(l => ({
+      tipo: 'lote',
+      fecha: l.fecha,
+      cantidad: l.cantidadRestante,
+      cantidadOriginal: l.cantidadOriginal,
+      precio: l.precioCompra,
+      proveedor: l.proveedorNombre,
+      adjunto: l.adjuntoURL,
+      icono: '📦',
+      color: '#7c3aed',
+    }));
+    
+    // Combinar y ordenar por fecha (más reciente primero)
+    const todosMovimientos = [...compras, ...ventas]
+      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    
+    setMovimientosProducto({ movimientos: todosMovimientos, lotes });
+    setMostrarModalHistorial(true);
   };
 
   const agregarStock = (tipo) => {
@@ -585,6 +651,14 @@ export default function ProductosPage() {
                       onClick={() => abrirModalStock(producto)}
                     >
                       📥
+                    </button>
+                    <button 
+                      className={styles.btnAction} 
+                      title="Ver historial"
+                      onClick={() => abrirHistorial(producto)}
+                      style={{ background: '#ede9fe', color: '#7c3aed' }}
+                    >
+                      📊
                     </button>
                     <button 
                       className={styles.btnAction} 
@@ -1163,6 +1237,138 @@ export default function ProductosPage() {
                   🗑️ Eliminar Definitivamente
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🆕 Modal de Historial de Movimientos */}
+      {mostrarModalHistorial && productoHistorial && (
+        <div className={styles.modalOverlay} onClick={() => setMostrarModalHistorial(false)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '85vh', overflow: 'hidden' }}>
+            <div className={styles.modalHeader}>
+              <h2>📊 Historial de Movimientos</h2>
+              <button className={styles.closeButton} onClick={() => setMostrarModalHistorial(false)}>
+                ✕
+              </button>
+            </div>
+            <div className={styles.modalBody} style={{ maxHeight: '65vh', overflowY: 'auto' }}>
+              <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <span style={{ fontSize: '2.5rem' }}>{getCategoriaIcon(productoHistorial.categoria)}</span>
+                <h3 style={{ margin: '10px 0' }}>{productoHistorial.nombre}</h3>
+                <p style={{ color: '#666' }}>Stock actual: <strong>{productoHistorial.stock} {productoHistorial.unidad}</strong></p>
+              </div>
+
+              {/* Lotes Activos */}
+              {movimientosProducto.lotes?.length > 0 && (
+                <div style={{ marginBottom: '20px' }}>
+                  <h4 style={{ marginBottom: '10px', color: '#7c3aed' }}>📦 Lotes Activos (PEPS)</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {movimientosProducto.lotes.map((lote, idx) => (
+                      <div key={idx} style={{ 
+                        padding: '12px', 
+                        background: '#faf5ff', 
+                        borderRadius: '8px',
+                        borderLeft: '4px solid #7c3aed',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                        <div>
+                          <span style={{ fontWeight: '600' }}>Lote #{idx + 1}</span>
+                          <span style={{ color: '#666', marginLeft: '10px', fontSize: '0.85rem' }}>
+                            {lote.proveedor} • {new Date(lote.fecha).toLocaleDateString('es-MX')}
+                          </span>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <span style={{ fontWeight: '600', color: '#7c3aed' }}>
+                            {lote.cantidad}/{lote.cantidadOriginal} {productoHistorial.unidad}
+                          </span>
+                          <span style={{ color: '#666', marginLeft: '10px', fontSize: '0.85rem' }}>
+                            @ {formatearMoneda(lote.precio)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Timeline de Movimientos */}
+              <h4 style={{ marginBottom: '10px', color: '#374151' }}>📜 Historial de Transacciones</h4>
+              {movimientosProducto.movimientos?.length === 0 ? (
+                <p style={{ textAlign: 'center', color: '#666', padding: '20px' }}>No hay movimientos registrados</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {movimientosProducto.movimientos?.map((mov, idx) => (
+                    <div key={idx} style={{ 
+                      padding: '12px 16px', 
+                      background: mov.tipo === 'compra' ? '#ecfdf5' : '#eff6ff',
+                      borderRadius: '8px',
+                      borderLeft: `4px solid ${mov.color}`,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start'
+                    }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '1.2rem' }}>{mov.icono}</span>
+                          <span style={{ fontWeight: '600', textTransform: 'capitalize' }}>{mov.tipo}</span>
+                          <span style={{ 
+                            background: mov.tipo === 'compra' ? '#d1fae5' : '#dbeafe', 
+                            padding: '2px 8px', 
+                            borderRadius: '12px', 
+                            fontSize: '0.75rem' 
+                          }}>
+                            {mov.tipo === 'compra' ? '+' : '-'}{mov.cantidad} {productoHistorial.unidad}
+                          </span>
+                        </div>
+                        <p style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px' }}>
+                          {mov.tipo === 'compra' ? `Proveedor: ${mov.proveedor}` : `Cliente: ${mov.cliente}`}
+                        </p>
+                        <p style={{ color: '#999', fontSize: '0.75rem', marginTop: '2px' }}>
+                          {new Date(mov.fecha).toLocaleDateString('es-MX', { 
+                            day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+                          })}
+                        </p>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ fontWeight: '600', color: mov.color }}>
+                          {formatearMoneda(mov.total)}
+                        </span>
+                        {mov.tipo === 'venta' && mov.utilidad > 0 && (
+                          <p style={{ color: '#059669', fontSize: '0.8rem', marginTop: '2px' }}>
+                            +{formatearMoneda(mov.utilidad)} utilidad
+                          </p>
+                        )}
+                        {mov.adjunto && (
+                          <button
+                            onClick={() => setModalImagen({ show: true, url: mov.adjunto })}
+                            style={{ 
+                              background: 'none', 
+                              border: 'none', 
+                              color: '#2563eb', 
+                              cursor: 'pointer',
+                              fontSize: '0.8rem',
+                              marginTop: '4px'
+                            }}
+                          >
+                            📎 Ver adjunto
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className={styles.modalFooter}>
+              <button 
+                className={styles.btnSecondary}
+                onClick={() => setMostrarModalHistorial(false)}
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>
