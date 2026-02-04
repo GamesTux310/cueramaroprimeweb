@@ -25,11 +25,11 @@ export default function ProductosPage() {
   const [productoStock, setProductoStock] = useState(null);
   const [cantidadStock, setCantidadStock] = useState('');
   
-  // Nuevos estados para compra
   const [esCompra, setEsCompra] = useState(false);
   const [proveedorId, setProveedorId] = useState('');
   const [precioCompra, setPrecioCompra] = useState('');
   const [nuevoPrecioVenta, setNuevoPrecioVenta] = useState('');
+  const [adjuntoCompra, setAdjuntoCompra] = useState(null); // 🆕 Adjunto de comprobante
   
   const [modalImagen, setModalImagen] = useState({ show: false, url: '' });
   
@@ -295,6 +295,7 @@ export default function ProductosPage() {
     setProveedorId('');
     setPrecioCompra(producto.precioCompra.toString());
     setNuevoPrecioVenta(producto.precioVenta.toString());
+    setAdjuntoCompra(null); // 🆕 Reset adjunto
     setMostrarModalStock(true);
   };
 
@@ -325,7 +326,8 @@ export default function ProductosPage() {
         cantidad: cantidad,
         unidad: productoStock.unidad || 'KG',
         precioCompra: precioC,
-        precioVenta: precioV
+        precioVenta: precioV,
+        adjuntoURL: adjuntoCompra, // 🆕 Comprobante adjunto
       });
 
       // 2. Actualizar Precios si cambiaron
@@ -1031,6 +1033,65 @@ export default function ProductosPage() {
                          onChange={(e) => setNuevoPrecioVenta(e.target.value)}
                          placeholder="0.00"
                        />
+                    </div>
+                    
+                    {/* 🆕 Adjuntar Comprobante */}
+                    <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
+                      <label>📎 Adjuntar Comprobante (Foto/Factura)</label>
+                      <div style={{ 
+                        display: 'flex', 
+                        gap: '10px', 
+                        alignItems: 'center',
+                        marginTop: '8px' 
+                      }}>
+                        <input 
+                          type="file" 
+                          accept="image/*,application/pdf"
+                          capture="environment"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              if (file.size > 5 * 1024 * 1024) {
+                                showToast('⚠️ Archivo muy grande (máx 5MB)', 'warning');
+                                return;
+                              }
+                              const reader = new FileReader();
+                              reader.onload = (ev) => setAdjuntoCompra(ev.target.result);
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                          style={{ flex: 1 }}
+                        />
+                        {adjuntoCompra && (
+                          <button 
+                            type="button"
+                            onClick={() => setAdjuntoCompra(null)}
+                            style={{ 
+                              background: '#fee2e2', 
+                              color: '#dc2626', 
+                              border: 'none', 
+                              padding: '6px 12px', 
+                              borderRadius: '6px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ✕ Quitar
+                          </button>
+                        )}
+                      </div>
+                      {adjuntoCompra && (
+                        <div style={{ marginTop: '10px', textAlign: 'center' }}>
+                          {adjuntoCompra.startsWith('data:image') ? (
+                            <img 
+                              src={adjuntoCompra} 
+                              alt="Vista previa" 
+                              style={{ maxWidth: '150px', maxHeight: '100px', borderRadius: '8px', border: '1px solid #ddd' }}
+                            />
+                          ) : (
+                            <span style={{ color: '#059669', fontSize: '0.9rem' }}>📄 PDF adjunto</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

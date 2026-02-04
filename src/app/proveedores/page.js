@@ -22,7 +22,8 @@ export default function ProveedoresPage() {
     productoId: '',
     cantidad: 1,
     precioCompra: '',
-    precioVenta: ''
+    precioVenta: '',
+    adjuntoURL: null, // 🆕 Adjunto de comprobante
   });
 
   const [guardando, setGuardando] = useState(false);
@@ -374,7 +375,8 @@ export default function ProveedoresPage() {
         cantidad: parseFloat(cantidad),
         unidad: prod ? prod.unidad : 'Unit',
         precioCompra: parseFloat(precioCompra),
-        precioVenta: parseFloat(precioVenta)
+        precioVenta: parseFloat(precioVenta),
+        adjuntoURL: compraFormData.adjuntoURL, // 🆕 Comprobante adjunto
       });
 
       // 2. Actualizar Producto (Stock y Precios)
@@ -1146,6 +1148,66 @@ export default function ProveedoresPage() {
                   <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '4px' }}>
                     Se actualizará el precio público de este producto.
                   </p>
+                </div>
+
+                {/* 🆕 Adjuntar Comprobante */}
+                <div className={styles.formGroup}>
+                  <label>📎 Adjuntar Comprobante (Foto/Factura)</label>
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '10px', 
+                    alignItems: 'center',
+                    marginTop: '8px' 
+                  }}>
+                    <input 
+                      type="file" 
+                      accept="image/*,application/pdf"
+                      capture="environment"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          if (file.size > 5 * 1024 * 1024) {
+                            setToast({ show: true, message: '⚠️ Archivo muy grande (máx 5MB)', type: 'warning' });
+                            setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
+                            return;
+                          }
+                          const reader = new FileReader();
+                          reader.onload = (ev) => setCompraFormData(prev => ({ ...prev, adjuntoURL: ev.target.result }));
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      style={{ flex: 1 }}
+                    />
+                    {compraFormData.adjuntoURL && (
+                      <button 
+                        type="button"
+                        onClick={() => setCompraFormData(prev => ({ ...prev, adjuntoURL: null }))}
+                        style={{ 
+                          background: '#fee2e2', 
+                          color: '#dc2626', 
+                          border: 'none', 
+                          padding: '6px 12px', 
+                          borderRadius: '6px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        ✕ Quitar
+                      </button>
+                    )}
+                  </div>
+                  {compraFormData.adjuntoURL && (
+                    <div style={{ marginTop: '10px', textAlign: 'center' }}>
+                      {compraFormData.adjuntoURL.startsWith('data:image') ? (
+                        <img 
+                          src={compraFormData.adjuntoURL} 
+                          alt="Vista previa" 
+                          style={{ maxWidth: '150px', maxHeight: '100px', borderRadius: '8px', border: '1px solid #ddd' }}
+                        />
+                      ) : (
+                        <span style={{ color: '#059669', fontSize: '0.9rem' }}>📄 PDF adjunto</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </form>
             </div>

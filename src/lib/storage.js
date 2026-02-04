@@ -166,6 +166,7 @@ const STORAGE_KEYS = {
   FACTURAS: 'cueramaro_facturas',
   NOTAS: 'cueramaro_notas',
   COMPRAS: 'cueramaro_compras',
+  LOTES: 'cueramaro_lotes', // 🆕 PEPS - Lotes de inventario
 };
 
 const datosInicialesNotas = [
@@ -360,15 +361,33 @@ export function saveVentas(ventas) {
 export function addVenta(venta) {
   const ventas = getVentas();
   const nuevoId = Math.max(...ventas.map(v => v.id), 0) + 1;
+  
+  // 🆕 PEPS: Consumir lotes para cada producto y calcular costo real
+  let costoTotalReal = 0;
+  const productosConLotes = venta.productos.map(item => {
+    const lotesConsumidos = consumirLotes(item.productoId, item.cantidad);
+    const costoItem = lotesConsumidos.reduce((sum, l) => sum + l.costoTotal, 0);
+    costoTotalReal += costoItem;
+    
+    return {
+      ...item,
+      lotesConsumidos, // Desglose de lotes usados
+      costoReal: costoItem, // Costo total basado en lotes
+    };
+  });
+  
   const nuevaVenta = {
     ...venta,
     id: nuevoId,
     fecha: new Date().toISOString(),
+    productos: productosConLotes, // Productos con info de lotes
+    costoTotalReal, // 🆕 Costo real basado en PEPS
+    utilidadReal: venta.total - costoTotalReal, // 🆕 Ganancia exacta
   };
   ventas.push(nuevaVenta);
   saveVentas(ventas);
   
-  // Actualizar stock de productos
+  // Actualizar stock de productos (para compatibilidad con UI existente)
   venta.productos.forEach(item => {
     actualizarStock(item.productoId, item.cantidad, 'restar');
   });
@@ -704,6 +723,115 @@ export function deleteNota(id) {
 }
 
 // ========================================
+// Lotes de Inventario (PEPS/FIFO)
+// ========================================
+export function getLotes(productoId = null) {
+  if (!isClient) return [];
+  
+  const data = localStorage.getItem(STORAGE_KEYS.LOTES);
+  if (!data) {
+    localStorage.setItem(STORAGE_KEYS.LOTES, JSON.stringify([]));
+    return [];
+  }
+  
+  const lotes = JSON.parse(data);
+  
+  // Si se especifica productoId, filtrar solo lotes de ese producto
+  if (productoId !== null) {
+    return lotes
+      .filter(l => l.productoId === productoId && l.cantidadRestante > 0)
+      .sort((a, b) => new Date(a.fecha) - new Date(b.fecha)); // Ordenar por fecha (más antiguo primero)
+  }
+  
+  return lotes;
+}
+
+export function saveLotes(lotes) {
+  if (!isClient) return;
+  localStorage.setItem(STORAGE_KEYS.LOTES, JSON.stringify(lotes));
+}
+
+export function addLote(lote) {
+  const lotes = getLotes();
+  const nuevoId = Math.max(...lotes.map(l => l.id), 0) + 1;
+  
+  const nuevoLote = {
+    id: nuevoId,
+    productoId: lote.productoId,
+    productoNombre: lote.productoNombre,
+    proveedorId: lote.proveedorId,
+    proveedorNombre: lote.proveedorNombre,
+    precioCompra: lote.precioCompra,
+    precioVenta: lote.precioVenta,
+    cantidadOriginal: lote.cantidad,
+    cantidadRestante: lote.cantidad,
+    unidad: lote.unidad || 'KG',
+    fecha: new Date().toISOString(),
+    compraId: lote.compraId,
+    adjuntoURL: lote.adjuntoURL || null, // 🆕 Foto/PDF de factura
+  };
+  
+  lotes.push(nuevoLote);
+  saveLotes(lotes);
+  return nuevoLote;
+}
+
+// 🆕 PEPS: Consumir lotes del más antiguo al más nuevo
+export function consumirLotes(productoId, cantidadAConsumir) {
+  const lotesProducto = getLotes(productoId); // Ya ordenados por fecha
+  const todosLotes = getLotes();
+  
+  let restante = cantidadAConsumir;
+  const lotesConsumidos = [];
+  
+  for (const lote of lotesProducto) {
+    if (restante <= 0) break;
+    
+    const consumir = Math.min(lote.cantidadRestante, restante);
+    
+    if (consumir > 0) {
+      lotesConsumidos.push({
+        loteId: lote.id,
+        cantidadConsumida: consumir,
+        precioCompra: lote.precioCompra,
+        costoTotal: consumir * lote.precioCompra,
+      });
+      
+      // Actualizar lote en la lista completa
+      const idx = todosLotes.findIndex(l => l.id === lote.id);
+      if (idx !== -1) {
+        todosLotes[idx].cantidadRestante -= consumir;
+      }
+      
+      restante -= consumir;
+    }
+  }
+  
+  // Guardar cambios
+  saveLotes(todosLotes);
+  
+  // Si quedó restante sin asignar, significa que no había suficiente stock en lotes
+  // (esto puede pasar con inventario "legacy" previo a PEPS)
+  if (restante > 0) {
+    lotesConsumidos.push({
+      loteId: null, // Sin lote asignado (legacy)
+      cantidadConsumida: restante,
+      precioCompra: 0, // Costo desconocido
+      costoTotal: 0,
+      nota: 'Stock sin lote asignado (previo a PEPS)'
+    });
+  }
+  
+  return lotesConsumidos;
+}
+
+// 🆕 Obtener stock real basado en lotes activos
+export function getStockReal(productoId) {
+  const lotesProducto = getLotes(productoId);
+  return lotesProducto.reduce((sum, lote) => sum + lote.cantidadRestante, 0);
+}
+
+// ========================================
 // Compras (Historial de Abastecimiento)
 // ========================================
 export function getCompras() {
@@ -737,11 +865,26 @@ export function addCompra(compra) {
     id: nuevoId,
     fecha: new Date().toISOString(),
     margen: margen,
-    total: total
+    total: total,
+    adjuntoURL: compra.adjuntoURL || null, // 🆕 Adjunto de comprobante
   };
   
   compras.push(nuevaCompra);
   saveCompras(compras);
+
+  // 🆕 Crear Lote PEPS
+  addLote({
+    productoId: compra.productoId,
+    productoNombre: compra.productoNombre,
+    proveedorId: compra.proveedorId,
+    proveedorNombre: compra.proveedorNombre,
+    precioCompra: compra.precioCompra,
+    precioVenta: compra.precioVenta,
+    cantidad: compra.cantidad,
+    unidad: compra.unidad,
+    compraId: nuevoId,
+    adjuntoURL: compra.adjuntoURL || null,
+  });
 
   // 🆕 Generar Gasto Automático
   addGasto({
