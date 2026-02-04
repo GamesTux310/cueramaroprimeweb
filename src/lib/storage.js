@@ -1,6 +1,13 @@
 // ========================================
-// Sistema de Almacenamiento Local
+// Sistema de Almacenamiento Híbrido
+// localStorage (caché) + Firebase (persistencia)
 // ========================================
+import { 
+  syncToFirestore, 
+  softDeleteFromFirestore,
+  isMigrated,
+  createLocalBackup
+} from './sync';
 
 // Datos iniciales de ejemplo
 const datosInicialesClientes = [
@@ -210,9 +217,15 @@ export function addCliente(cliente) {
     fechaRegistro: new Date().toISOString().split('T')[0],
     ultimaCompra: null,
     saldoPendiente: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
   clientes.push(nuevoCliente);
   saveClientes(clientes);
+  
+  // 🔥 Sync to Firebase
+  syncToFirestore('clientes', nuevoCliente).catch(console.error);
+  
   return nuevoCliente;
 }
 
@@ -220,8 +233,16 @@ export function updateCliente(id, datosActualizados) {
   const clientes = getClientes();
   const index = clientes.findIndex(c => c.id === id);
   if (index !== -1) {
-    clientes[index] = { ...clientes[index], ...datosActualizados };
+    clientes[index] = { 
+      ...clientes[index], 
+      ...datosActualizados,
+      updatedAt: new Date().toISOString(),
+    };
     saveClientes(clientes);
+    
+    // 🔥 Sync to Firebase
+    syncToFirestore('clientes', clientes[index]).catch(console.error);
+    
     return clientes[index];
   }
   return null;
@@ -231,6 +252,9 @@ export function deleteCliente(id) {
   const clientes = getClientes();
   const clientesFiltrados = clientes.filter(c => c.id !== id);
   saveClientes(clientesFiltrados);
+  
+  // 🔥 Soft delete in Firebase
+  softDeleteFromFirestore('clientes', id).catch(console.error);
 }
 
 // ========================================
@@ -258,9 +282,15 @@ export function addProducto(producto) {
   const nuevoProducto = {
     ...producto,
     id: nuevoId,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
   productos.push(nuevoProducto);
   saveProductos(productos);
+  
+  // 🔥 Sync to Firebase
+  syncToFirestore('productos', nuevoProducto).catch(console.error);
+  
   return nuevoProducto;
 }
 
@@ -268,8 +298,16 @@ export function updateProducto(id, datosActualizados) {
   const productos = getProductos();
   const index = productos.findIndex(p => p.id === id);
   if (index !== -1) {
-    productos[index] = { ...productos[index], ...datosActualizados };
+    productos[index] = { 
+      ...productos[index], 
+      ...datosActualizados,
+      updatedAt: new Date().toISOString(),
+    };
     saveProductos(productos);
+    
+    // 🔥 Sync to Firebase
+    syncToFirestore('productos', productos[index]).catch(console.error);
+    
     return productos[index];
   }
   return null;
@@ -279,6 +317,9 @@ export function deleteProducto(id) {
   const productos = getProductos();
   const productosFiltrados = productos.filter(p => p.id !== id);
   saveProductos(productosFiltrados);
+  
+  // 🔥 Soft delete in Firebase
+  softDeleteFromFirestore('productos', id).catch(console.error);
 }
 
 export function actualizarStock(id, cantidad, tipo = 'agregar') {
@@ -400,6 +441,9 @@ export function addVenta(venta) {
     });
   }
   
+  // 🔥 Sync to Firebase
+  syncToFirestore('ventas', nuevaVenta).catch(console.error);
+  
   return nuevaVenta;
 }
 
@@ -407,6 +451,9 @@ export function deleteVenta(id) {
   const ventas = getVentas();
   const ventasFiltradas = ventas.filter(v => v.id !== id);
   saveVentas(ventasFiltradas);
+  
+  // 🔥 Soft delete in Firebase
+  softDeleteFromFirestore('ventas', id).catch(console.error);
 }
 
 // ========================================
@@ -780,10 +827,16 @@ export function addLote(lote) {
     fecha: new Date().toISOString(),
     compraId: lote.compraId,
     adjuntoURL: lote.adjuntoURL || null, // 🆕 Foto/PDF de factura
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
   
   lotes.push(nuevoLote);
   saveLotes(lotes);
+  
+  // 🔥 Sync to Firebase
+  syncToFirestore('lotes', nuevoLote).catch(console.error);
+  
   return nuevoLote;
 }
 
@@ -889,6 +942,8 @@ export function addCompra(compra) {
     margen: margen,
     total: total,
     adjuntoURL: compra.adjuntoURL || null, // 🆕 Adjunto de comprobante
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
   
   compras.push(nuevaCompra);
@@ -916,6 +971,9 @@ export function addCompra(compra) {
     categoria: 'Mercancía',
     fecha: nuevaCompra.fecha
   });
+
+  // 🔥 Sync compra to Firebase
+  syncToFirestore('compras', nuevaCompra).catch(console.error);
 
   return nuevaCompra;
 }
