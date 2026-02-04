@@ -748,7 +748,18 @@ export function getLotes(productoId = null) {
 
 export function saveLotes(lotes) {
   if (!isClient) return;
-  localStorage.setItem(STORAGE_KEYS.LOTES, JSON.stringify(lotes));
+  try {
+    localStorage.setItem(STORAGE_KEYS.LOTES, JSON.stringify(lotes));
+  } catch (error) {
+    console.error('Error saving lotes:', error);
+    // Si es error de quota, limpiar adjuntos grandes
+    if (error.name === 'QuotaExceededError' || error.code === 22) {
+      const lotesLimpios = lotes.map(l => ({ ...l, adjuntoURL: null }));
+      localStorage.setItem(STORAGE_KEYS.LOTES, JSON.stringify(lotesLimpios));
+      throw new Error('Almacenamiento lleno. El adjunto fue removido.');
+    }
+    throw error;
+  }
 }
 
 export function addLote(lote) {
@@ -847,7 +858,18 @@ export function getCompras() {
 
 export function saveCompras(compras) {
   if (!isClient) return;
-  localStorage.setItem(STORAGE_KEYS.COMPRAS, JSON.stringify(compras));
+  try {
+    localStorage.setItem(STORAGE_KEYS.COMPRAS, JSON.stringify(compras));
+  } catch (error) {
+    console.error('Error saving compras:', error);
+    // Si es error de quota, limpiar adjuntos grandes
+    if (error.name === 'QuotaExceededError' || error.code === 22) {
+      const comprasLimpias = compras.map(c => ({ ...c, adjuntoURL: null }));
+      localStorage.setItem(STORAGE_KEYS.COMPRAS, JSON.stringify(comprasLimpias));
+      throw new Error('Almacenamiento lleno. El adjunto fue removido.');
+    }
+    throw error;
+  }
 }
 
 export function addCompra(compra) {

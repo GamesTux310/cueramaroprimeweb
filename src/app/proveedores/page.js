@@ -395,8 +395,8 @@ export default function ProveedoresPage() {
       setMostrarModalCompra(false);
       
     } catch (error) {
-      console.error(error);
-      setToast({ show: true, message: 'Error al registrar compra', type: 'error' });
+      console.error('Error registrando compra:', error);
+      setToast({ show: true, message: error.message || 'Error al registrar compra', type: 'error' });
     } finally {
       setGuardando(false);
     }
