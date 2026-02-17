@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import styles from './ActivityCalendar.module.css';
 import { getVentas, getCompras, getAbonos, getClientes, getProveedores, getGastos, getNotas, getMermas, getProductos } from '@/lib/storage';
 import ImageModal from './ImageModal';
+import FacturaPreview from './factura/FacturaPreview';
 
 /**
  * ActivityCalendar - Componente reutilizable de calendario de actividad
@@ -25,6 +26,7 @@ export default function ActivityCalendar({ type = 'ventas', clienteId = null, pr
   const [proveedores, setProveedores] = useState([]);
   const [productos, setProductos] = useState([]); // 🆕 Productos para imágenes
   const [modalImagen, setModalImagen] = useState({ show: false, url: '' }); // 🆕 Modal de imagen
+  const [mostrarFactura, setMostrarFactura] = useState(false); // 🆕 Modal de imagen
 
   const meses = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -827,18 +829,52 @@ export default function ActivityCalendar({ type = 'ventas', clienteId = null, pr
                        </div>
                      )}
 
-                     {/* BOTONES DE ACCIÓN (Si aplica) */}
-                     {/* Aquí se podrían añadir botones para Editar, Compartir, Imprimir */}
+                     {/* BOTONES DE ACCIÓN */}
+                     <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+                       {actividad.tipo === 'venta' && (
+                         <button 
+                           onClick={() => setMostrarFactura(true)}
+                           style={{
+                             flex: 1,
+                             padding: '10px',
+                             background: '#0f172a',
+                             color: 'white',
+                             border: 'none',
+                             borderRadius: '8px',
+                             fontWeight: '600',
+                             cursor: 'pointer',
+                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                           }}
+                         >
+                           📄 Ver Nota / Factura
+                         </button>
+                       )}
+                     </div>
 
                    </div>
                  </div>
                  
                  {/* Modal de Imagen Ampliada */}
-                 {/* Modal de Imagen Ampliada */}
                  {modalImagen.show && (
                    <ImageModal
                      imageUrl={modalImagen.url}
                      onClose={() => setModalImagen({ show: false, url: '' })}
+                   />
+                 )}
+
+                 {/* Modal de Factura */}
+                 {mostrarFactura && (
+                   <FacturaPreview
+                     factura={{
+                       ...actividad,
+                       numeroFactura: `NOTA-${actividad.id}`,
+                       cliente: clienteFull,
+                       productos: productosEnriquecidos,
+                       fecha: actividad.fecha,
+                       total: actividad.total || actividad.monto,
+                       metodoPago: actividad.metodoPago || 'Contado'
+                     }}
+                     onClose={() => setMostrarFactura(false)}
                    />
                  )}
 
