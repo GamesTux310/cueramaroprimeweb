@@ -834,10 +834,13 @@ export default function ActivityCalendar({ type = 'ventas', clienteId = null, pr
                  </div>
                  
                  {/* Modal de Imagen Ampliada */}
-                 <ImageModal
-                   imageUrl={modalImagen.url}
-                   onClose={() => setModalImagen({ ...modalImagen, show: false })}
-                 />
+                 {/* Modal de Imagen Ampliada */}
+                 {modalImagen.show && (
+                   <ImageModal
+                     imageUrl={modalImagen.url}
+                     onClose={() => setModalImagen({ show: false, url: '' })}
+                   />
+                 )}
 
                </div>
              );
