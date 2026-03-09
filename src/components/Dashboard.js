@@ -114,6 +114,17 @@ export default function Dashboard() {
 
     const modules = [
         {
+            href: '/ventas',
+            icon: '🛒',
+            iconClass: 'green',
+            title: 'Ventas',
+            description: 'Historial y registros',
+            stats: [
+                { value: formatearMoneda(stats.ventasMes), label: 'Mes', type: 'success' },
+                { value: stats.ventasCountMes, label: 'Oper.', type: 'normal' }
+            ]
+        },
+        {
             href: '/facturas',
             icon: '📄',
             iconClass: 'blue',
@@ -214,7 +225,8 @@ export default function Dashboard() {
             changeType: 'positive',
             hasFilter: true,
             onFilterChange: setFiltroVentas,
-            currentFilter: filtroVentas
+            currentFilter: filtroVentas,
+            href: '/ventas'
         },
         {
             icon: '💸',
@@ -222,7 +234,8 @@ export default function Dashboard() {
             title: 'Gastos del Día',
             value: formatearMoneda(stats.gastosHoyMonto || 0),
             change: `${stats.gastosHoyCount || 0} gastos`,
-            changeType: 'negative'
+            changeType: 'negative',
+            href: '/gastos'
         },
         {
             icon: '⚠️',
