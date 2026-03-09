@@ -39,6 +39,7 @@ export default function ClientesPage() {
     const [detalleVenta, setDetalleVenta] = useState(null);
     const [facturaSeleccionada, setFacturaSeleccionada] = useState(null);
     const [filtroHistorial, setFiltroHistorial] = useState('todas');
+    const [filtroMovimientosGlobal, setFiltroMovimientosGlobal] = useState('todas');
     
     // Toast
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -362,6 +363,50 @@ export default function ClientesPage() {
         setConfirmarTexto('');
     };
 
+    // Computar últimos movimientos globales
+    let movimientosGlobales = [];
+    if (ventasData.length > 0 || facturas.length > 0 || abonosData.length > 0) {
+        const ventasG = ventasData.map(v => ({
+            tipo: 'VENTA', fecha: v.fecha, monto: v.total, metodo: v.metodoPago,
+            id: v.id, raw: v,
+            descripcion: `Venta - ${v.cliente?.nombre || 'General'}`,
+            folio: facturas.find(f => f.ventaId === v.id)?.numeroFactura || '',
+            clienteNombre: v.cliente?.nombre || 'General',
+            clienteId: v.clienteId
+        }));
+        
+        const facturasG = facturas.map(f => ({
+            tipo: 'FACTURA', fecha: f.fecha || f.fechaEmision, monto: f.total, metodo: f.metodoPago,
+            id: f.id, raw: f,
+            descripcion: `Factura ${f.numeroFactura || ''} - ${f.cliente?.nombre || 'Desconocido'}`,
+            folio: f.numeroFactura || '',
+            tipoFactura: f.tipoFactura,
+            clienteNombre: f.cliente?.nombre || 'Desconocido',
+            clienteId: f.clienteId
+        }));
+        
+        const abonosG = abonosData.map(a => ({
+            tipo: 'ABONO', fecha: a.fecha, monto: a.monto, metodo: a.metodoPago,
+            id: a.id, raw: a,
+            descripcion: `Abono a ${a.clienteNombre || 'Cliente'}`,
+            folio: a.numeroFactura || a.numeroAbono || '',
+            clienteNombre: a.clienteNombre || 'Cliente',
+            clienteId: a.clienteId
+        }));
+
+        movimientosGlobales = [...ventasG, ...facturasG, ...abonosG];
+
+        // Filtro global
+        if (filtroMovimientosGlobal === 'ventas') movimientosGlobales = movimientosGlobales.filter(m => m.tipo === 'VENTA');
+        else if (filtroMovimientosGlobal === 'facturas') movimientosGlobales = movimientosGlobales.filter(m => m.tipo === 'FACTURA');
+        else if (filtroMovimientosGlobal === 'abonos') movimientosGlobales = movimientosGlobales.filter(m => m.tipo === 'ABONO');
+        else if (filtroMovimientosGlobal === 'fc') movimientosGlobales = movimientosGlobales.filter(m => m.tipo === 'FACTURA' && (m.tipoFactura === 'credito' || m.folio.startsWith('FC')));
+        else if (filtroMovimientosGlobal === 'fa') movimientosGlobales = movimientosGlobales.filter(m => m.tipo === 'FACTURA' && (m.tipoFactura !== 'credito' && m.tipoFactura !== 'abono' || m.folio.startsWith('FA')));
+
+        movimientosGlobales.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+        movimientosGlobales = movimientosGlobales.slice(0, 15); // Solo últimos 15 globalmente
+    }
+
     return (
         <>
             {/* Toast */}
@@ -547,6 +592,88 @@ export default function ClientesPage() {
                         <span className={styles.statLabel}>Por Cobrar</span>
                     </div>
                 </div>
+            </section>
+
+            {/* Últimos Movimientos Globales */}
+            <section style={{ marginBottom: '20px', background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', border: '1px solid #e5e7eb' }}>
+                <h4 style={{ margin: '0 0 15px 0', color: '#1f2937', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>📊</span> Últimos Movimientos
+                </h4>
+                
+                {/* Botones de Filtro Globales */}
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '15px' }}>
+                    {[
+                        { key: 'todas', label: '📋 Todas', color: '#6366f1' },
+                        { key: 'ventas', label: '🛒 Ventas', color: '#3b82f6' },
+                        { key: 'facturas', label: '📄 Facturas', color: '#0ea5e9' },
+                        { key: 'abonos', label: '💰 Abonos', color: '#10b981' },
+                        { key: 'fc', label: '📄 FC (Crédito)', color: '#f59e0b' },
+                        { key: 'fa', label: '📄 FA (Contado)', color: '#8b5cf6' },
+                    ].map(btn => (
+                        <button
+                            key={btn.key}
+                            onClick={() => setFiltroMovimientosGlobal(btn.key)}
+                            style={{
+                                padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer',
+                                fontSize: '0.85rem', fontWeight: 'bold', transition: 'all 0.2s',
+                                background: filtroMovimientosGlobal === btn.key ? btn.color : '#f3f4f6',
+                                color: filtroMovimientosGlobal === btn.key ? 'white' : '#4b5563',
+                                boxShadow: filtroMovimientosGlobal === btn.key ? `0 2px 8px ${btn.color}66` : 'none'
+                            }}
+                        >
+                            {btn.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Lista de Movimientos */}
+                {movimientosGlobales.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '20px', color: '#6b7280', background: '#f9fafb', borderRadius: '8px' }}>
+                        📭 No hay movimientos recientes con este filtro
+                    </div>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '400px', overflowY: 'auto', paddingRight: '5px' }}>
+                        {movimientosGlobales.map((mov, i) => (
+                            <div key={`${mov.id}-${i}`} style={{
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                padding: '12px 16px', borderRadius: '8px', background: '#f8fafc',
+                                borderLeft: `4px solid ${mov.tipo === 'VENTA' ? '#3b82f6' : mov.tipo === 'FACTURA' ? '#0ea5e9' : '#10b981'}`,
+                                border: '1px solid #f1f5f9',
+                                borderLeftWidth: '4px'
+                            }}>
+                                <div>
+                                    <div style={{ fontWeight: 'bold', fontSize: '0.95rem', color: '#1f2937' }}>{mov.descripcion}</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>
+                                        📅 {mov.fecha} &nbsp;•&nbsp; 👤 <span style={{ color: '#4f46e5', fontWeight: '500' }}>{mov.clienteNombre}</span>
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                    <div style={{ 
+                                        fontWeight: 'bold', fontSize: '1.1rem',
+                                        color: mov.tipo === 'VENTA' ? '#1f2937' : mov.tipo === 'ABONO' ? '#10b981' : '#dc2626' 
+                                    }}>
+                                        {mov.tipo === 'ABONO' ? '+' : ''}{formatearMoneda(mov.monto)}
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            if (mov.tipo === 'VENTA') setDetalleVenta(mov.raw);
+                                            else setFacturaSeleccionada(mov.raw);
+                                        }}
+                                        style={{
+                                            background: '#e0e7ff', color: '#4338ca', border: 'none',
+                                            padding: '6px 12px', borderRadius: '6px', fontSize: '0.8rem',
+                                            cursor: 'pointer', fontWeight: 'bold', transition: 'background 0.2s'
+                                        }}
+                                        onMouseOver={(e) => e.target.style.background = '#c7d2fe'}
+                                        onMouseOut={(e) => e.target.style.background = '#e0e7ff'}
+                                    >
+                                        📄 Ver
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </section>
 
             {/* Filtros y Búsqueda */}
@@ -1187,7 +1314,7 @@ export default function ClientesPage() {
                                         <div className={styles.formGroup}>
                                             <label>Email</label>
                                             <input 
-                                                type="email" 
+                                                type="text" 
                                                 name="email"
                                                 value={formData.email}
                                                 onChange={handleInputChange}
