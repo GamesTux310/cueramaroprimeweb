@@ -290,8 +290,8 @@ export default function VentasPage() {
         setClientes(await getClientes());
       }
 
-      // 🆕 Generar factura automáticamente
-      const numFactura = await generarNumeroFactura();
+      const tipoFolio = tipoFactura === 'credito' ? 'credito' : 'contado';
+      const numFactura = await generarNumeroFactura(tipoFolio, clienteSeleccionado?.nombre || 'PUBLICO GENERAL');
       const datosFactura = {
         ventaId: nuevaVenta.id,
         numeroFactura: numFactura,

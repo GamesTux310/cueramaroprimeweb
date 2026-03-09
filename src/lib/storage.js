@@ -351,7 +351,7 @@ export async function addFacturaAbono(abonoData) {
   if (!isClient) return null;
   if (abonoData.monto !== undefined && abonoData.monto < 0) throw new Error('No se permiten valores negativos en montos');
   
-  const numeroFactura = await generarNumeroFactura();
+  const numeroFactura = await generarNumeroFactura('abono', abonoData.clienteNombre || '');
   const fechaHoy = new Date().toISOString().split('T')[0];
 
   // Obtener datos completos del cliente para la factura
@@ -424,21 +424,45 @@ export const saveFacturas = (data) => saveAll('facturas', data);
 export const deleteFactura = (id) => deleteRecord('facturas', id, false);
 export const updateFactura = (id, datos) => updateRecord('facturas', id, datos, false);
 
-export async function generarNumeroFactura() {
+/**
+ * Genera número de factura con siglas inteligentes.
+ * @param {string} tipo - 'credito', 'contado', 'abono' (default: 'contado')
+ * @param {string} clienteNombre - Nombre del cliente para extraer iniciales
+ * @returns {string} Ej: FC-04-2026-JP-001, FA-04-2026-MG-001, AB-04-2026-JP-001
+ */
+export async function generarNumeroFactura(tipo = 'contado', clienteNombre = '') {
   const facturasTodas = await dexieDb.facturas.toArray();
   const fechaActual = new Date();
   const año = fechaActual.getFullYear();
   const mesNumero = (fechaActual.getMonth() + 1).toString().padStart(2, '0');
-  const mesesLetra = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
-  const mesLetra = mesesLetra[fechaActual.getMonth()];
-  const prefijoMes = `F-${mesNumero}(${mesLetra})-${año}-`;
-  const facturasDelMes = facturasTodas.filter(f => f.numeroFactura && f.numeroFactura.startsWith(prefijoMes));
-  const ultimoNumero = facturasDelMes.length > 0 ? Math.max(...facturasDelMes.map(f => parseInt(f.numeroFactura.split('-').pop()) || 0)) : 0;
-  return `${prefijoMes}${(ultimoNumero + 1).toString().padStart(3, '0')}`;
+
+  // Determinar prefijo según tipo
+  let prefijo = 'FA'; // Factura Adelanto (contado) por defecto
+  if (tipo === 'credito') prefijo = 'FC'; // Factura Crédito
+  else if (tipo === 'abono') prefijo = 'AB'; // Abono
+
+  // Extraer iniciales del cliente (primeras 2 palabras)
+  const palabras = (clienteNombre || 'XX').trim().toUpperCase().split(/\s+/);
+  const iniciales = palabras.length >= 2
+    ? (palabras[0][0] || 'X') + (palabras[1][0] || 'X')
+    : (palabras[0][0] || 'X') + (palabras[0][1] || 'X');
+
+  const prefijoCompleto = `${prefijo}-${mesNumero}-${año}-${iniciales}-`;
+
+  // Contar secuencia solo del mismo prefijo+mes+año (sin importar iniciales)
+  const prefijoBase = `${prefijo}-${mesNumero}-${año}-`;
+  const facturasDelMes = facturasTodas.filter(f => f.numeroFactura && f.numeroFactura.startsWith(prefijoBase));
+  const ultimoNumero = facturasDelMes.length > 0
+    ? Math.max(...facturasDelMes.map(f => parseInt(f.numeroFactura.split('-').pop()) || 0))
+    : 0;
+
+  return `${prefijoCompleto}${(ultimoNumero + 1).toString().padStart(3, '0')}`;
 }
 
 export async function addFactura(facturaData) {
-  const numeroFactura = await generarNumeroFactura();
+  const tipoFact = facturaData.tipoFactura === 'credito' ? 'credito' : 'contado';
+  const nombreCliente = facturaData.cliente?.nombre || '';
+  const numeroFactura = await generarNumeroFactura(tipoFact, nombreCliente);
   return createRecord('facturas', {
     ...facturaData,
     numeroFactura,

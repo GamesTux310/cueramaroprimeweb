@@ -7,6 +7,7 @@ import { getClientes, addCliente, updateCliente, saveClientes, getFacturas, dele
 import { uploadImage } from '@/lib/storageService';
 import ImageModal from '@/components/ImageModal';
 import ActivityCalendar from '@/components/ActivityCalendar';
+import FacturaPreview from '@/components/factura/FacturaPreview';
 
 export default function ClientesPage() {
     const [clientes, setClientes] = useState([]);
@@ -36,6 +37,8 @@ export default function ClientesPage() {
     const [modalImagen, setModalImagen] = useState({ show: false, url: '' });
     const [mostrarCalendario, setMostrarCalendario] = useState(false);
     const [detalleVenta, setDetalleVenta] = useState(null);
+    const [facturaSeleccionada, setFacturaSeleccionada] = useState(null);
+    const [filtroHistorial, setFiltroHistorial] = useState('todas');
     
     // Toast
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -377,6 +380,21 @@ export default function ClientesPage() {
                 imageUrl={modalImagen.url}
                 onClose={() => setModalImagen({ show: false, url: '' })}
                 />
+            )}
+
+            {/* Modal de Factura Preview */}
+            {facturaSeleccionada && (
+                <div className={styles.modalOverlay} onClick={() => setFacturaSeleccionada(null)} style={{ zIndex: 1100 }}>
+                    <div className={styles.modal} onClick={e => e.stopPropagation()} style={{ maxWidth: '900px', width: '95%', maxHeight: '90vh', overflow: 'auto' }}>
+                        <div className={styles.modalHeader}>
+                            <h3>📄 Vista de Factura: {facturaSeleccionada.numeroFactura}</h3>
+                            <button className={styles.closeButton} onClick={() => setFacturaSeleccionada(null)}>✕</button>
+                        </div>
+                        <div className={styles.modalBody}>
+                            <FacturaPreview factura={facturaSeleccionada} />
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* Modal Detalle Venta */}
@@ -721,33 +739,290 @@ export default function ClientesPage() {
                                     </div>
                                 </div>
 
-                                <div className={styles.expedienteSection}>
-                                    <h4>💰 Información Financiera</h4>
-                                    <div className={styles.infoGrid}>
-                                        <div>
-                                            <label>Tipo de Cliente</label>
-                                            <p>
-                                                {clienteSeleccionado.tipoCliente === 'credito' ? '💳 Crédito' : '💵 Contado'}
-                                                {clienteSeleccionado.tipoCliente === 'credito' && clienteSeleccionado.diasCredito > 0 && 
-                                                    <span style={{ fontSize: '0.85rem', color: '#059669', marginLeft: '8px', fontWeight: 'bold' }}>
-                                                        ({clienteSeleccionado.diasCredito} días)
-                                                    </span>
-                                                }
-                                            </p>
+                                {/* 💰 ESTADO DE CUENTA - MISMO FORMATO QUE PROVEEDORES */}
+                                <div className={styles.expedienteSection} style={{ gridColumn: '1 / -1', borderLeft: '4px solid #f59e0b' }}>
+                                    <h4 style={{ color: '#d97706' }}>💰 Estado de Cuenta</h4>
+                                    
+                                    {clienteSeleccionado.tipoCliente === 'credito' && (() => {
+                                        const limite = Number(clienteSeleccionado.limiteCredito) || 50000;
+                                        const utilizado = Number(clienteSeleccionado.saldoPendiente) || 0;
+                                        const disponible = Math.max(0, limite - utilizado);
+                                        const porcentaje = limite > 0 ? Math.min(100, (utilizado / limite) * 100) : 0;
+                                        const colorBarra = porcentaje > 80 ? '#ef4444' : porcentaje > 50 ? '#f59e0b' : '#10b981';
+                                        return (
+                                            <>
+                                                {/* Métricas numéricas - GRID 3 COLUMNAS como proveedores */}
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '15px' }}>
+                                                    <div style={{ textAlign: 'center', padding: '10px', background: '#f0f9ff', borderRadius: '8px' }}>
+                                                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '2px' }}>Límite Total</div>
+                                                        <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1e40af' }}>{formatearMoneda(limite)}</div>
+                                                    </div>
+                                                    <div style={{ textAlign: 'center', padding: '10px', background: '#fef2f2', borderRadius: '8px' }}>
+                                                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '2px' }}>Utilizado</div>
+                                                        <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#ef4444' }}>{formatearMoneda(utilizado)}</div>
+                                                    </div>
+                                                    <div style={{ textAlign: 'center', padding: '10px', background: '#f0fdf4', borderRadius: '8px' }}>
+                                                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '2px' }}>Disponible</div>
+                                                        <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#10b981' }}>{formatearMoneda(disponible)}</div>
+                                                    </div>
+                                                </div>
+                                                {/* Barra de progreso dual - IDÉNTICA a proveedores */}
+                                                <div style={{ background: '#e5e7eb', borderRadius: '10px', height: '18px', overflow: 'hidden', position: 'relative' }}>
+                                                    <div style={{
+                                                        width: `${porcentaje}%`, height: '100%',
+                                                        background: `linear-gradient(90deg, ${colorBarra}, ${colorBarra}dd)`,
+                                                        borderRadius: '10px', transition: 'width 0.5s ease',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    }}>
+                                                        {porcentaje > 15 && (
+                                                            <span style={{ color: 'white', fontSize: '0.65rem', fontWeight: '700' }}>{porcentaje.toFixed(0)}%</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '0.7rem', color: '#9ca3af' }}>
+                                                    <span>0%</span>
+                                                    <span>{porcentaje.toFixed(0)}% utilizado</span>
+                                                    <span>100%</span>
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
+
+                                    {/* Para clientes de contado, solo saldo */}
+                                    {clienteSeleccionado.tipoCliente !== 'credito' && (
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                                <span style={{ fontSize: '0.9rem', color: '#666' }}>Saldo Pendiente:</span>
+                                                <h2 style={{ 
+                                                    color: (clienteSeleccionado.saldoPendiente || 0) > 0 ? '#ef4444' : '#10b981',
+                                                    margin: '5px 0'
+                                                }}>
+                                                    {formatearMoneda(clienteSeleccionado.saldoPendiente || 0)}
+                                                </h2>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <label>Saldo Pendiente</label>
-                                            <p className={clienteSeleccionado.saldoPendiente > 0 ? styles.saldoPendiente : ''}>
-                                                {formatearMoneda(clienteSeleccionado.saldoPendiente || 0)}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <label>Última Compra</label>
-                                            <p>{clienteSeleccionado.ultimaCompra || 'Sin compras'}</p>
-                                        </div>
+                                    )}
+
+                                    <div style={{ display: 'flex', gap: '10px', marginTop: '10px', fontSize: '0.85rem', color: '#6b7280' }}>
+                                        <span>💳 {clienteSeleccionado.tipoCliente === 'credito' ? `Crédito (${clienteSeleccionado.diasCredito || 0} días)` : 'Contado'}</span>
+                                        <span>•</span>
+                                        <span>Última compra: {clienteSeleccionado.ultimaCompra || 'Sin compras'}</span>
                                     </div>
                                 </div>
 
+                                {/* ⚠️ ALERTAS DE ATRASO */}
+                                {(() => {
+                                    const facturasCliente = facturas.filter(f => {
+                                        const cliCode = `CLI-${String(clienteSeleccionado.id).padStart(3, '0')}`;
+                                        return (f.cliente?.codigo === cliCode || f.clienteId === clienteSeleccionado.id) && f.estado === 'pendiente' && f.fechaVencimiento;
+                                    });
+                                    const hoy = new Date();
+                                    hoy.setHours(0,0,0,0);
+                                    const facturasVencidas = facturasCliente.filter(f => {
+                                        const [a, m, d] = (f.fechaVencimiento || '').split('-');
+                                        const fechaVenc = new Date(parseInt(a), parseInt(m) - 1, parseInt(d));
+                                        return fechaVenc < hoy;
+                                    }).map(f => {
+                                        const [a, m, d] = f.fechaVencimiento.split('-');
+                                        const fechaVenc = new Date(parseInt(a), parseInt(m) - 1, parseInt(d));
+                                        const diasAtraso = Math.ceil((hoy - fechaVenc) / (1000 * 60 * 60 * 24));
+                                        return { ...f, diasAtraso };
+                                    });
+
+                                    if (facturasVencidas.length === 0) return null;
+                                    return (
+                                        <div className={styles.expedienteSection} style={{ gridColumn: '1 / -1' }}>
+                                            <div style={{ background: '#fef2f2', border: '2px solid #fca5a5', borderRadius: '10px', padding: '14px' }}>
+                                                <h4 style={{ color: '#dc2626', marginBottom: '10px', fontSize: '1rem' }}>⚠️ FACTURAS CON ATRASO</h4>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    {facturasVencidas.map(f => (
+                                                        <div key={f.id} style={{
+                                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                            background: 'white', padding: '10px 14px', borderRadius: '6px', borderLeft: '4px solid #dc2626',
+                                                            cursor: 'pointer'
+                                                        }} onClick={() => setFacturaSeleccionada(f)}>
+                                                            <div>
+                                                                <div style={{ fontWeight: 'bold', color: '#1f2937' }}>{f.numeroFactura}</div>
+                                                                <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>Venció: {f.fechaVencimiento}</div>
+                                                            </div>
+                                                            <div style={{ textAlign: 'right' }}>
+                                                                <div style={{ fontWeight: 'bold', color: '#dc2626', fontSize: '1.1rem' }}>{f.diasAtraso} días de atraso</div>
+                                                                <div style={{ fontSize: '0.85rem', color: '#1f2937' }}>{formatearMoneda(f.total)}</div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+
+                                {/* 📊 HISTORIAL COMPLETO POR MES CON FILTROS POR BOTÓN */}
+                                <div className={styles.expedienteSection} style={{ gridColumn: '1 / -1' }}>
+                                    <h4>📊 Historial Completo de Movimientos</h4>
+
+                                    {/* Botones de Filtro */}
+                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px', marginBottom: '12px' }}>
+                                        {[
+                                            { key: 'todas', label: '📋 Todas', color: '#6366f1' },
+                                            { key: 'ventas', label: '🛒 Ventas', color: '#3b82f6' },
+                                            { key: 'facturas', label: '📄 Facturas', color: '#0ea5e9' },
+                                            { key: 'abonos', label: '💰 Abonos', color: '#10b981' },
+                                            { key: 'fc', label: '📄 FC (Crédito)', color: '#f59e0b' },
+                                            { key: 'fa', label: '📄 FA (Contado)', color: '#8b5cf6' },
+                                        ].map(btn => (
+                                            <button
+                                                key={btn.key}
+                                                onClick={() => setFiltroHistorial(btn.key)}
+                                                style={{
+                                                    padding: '8px 16px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: '600',
+                                                    border: filtroHistorial === btn.key ? `2px solid ${btn.color}` : '1px solid #d1d5db',
+                                                    background: filtroHistorial === btn.key ? `${btn.color}15` : 'white',
+                                                    color: filtroHistorial === btn.key ? btn.color : '#374151',
+                                                    cursor: 'pointer', transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                {btn.label}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <div style={{
+                                        background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', 
+                                        padding: '12px', maxHeight: '500px', overflowY: 'auto'
+                                    }}>
+                                        {(() => {
+                                            const cliCode = `CLI-${String(clienteSeleccionado.id).padStart(3, '0')}`;
+                                            
+                                            // Recopilar TODOS los movimientos del cliente
+                                            const facturasCliente = facturas.filter(f => 
+                                                f.cliente?.codigo === cliCode || f.clienteId === clienteSeleccionado.id
+                                            );
+                                            
+                                            const ventasCliente = ventasData.filter(v => v.clienteId === clienteSeleccionado.id)
+                                                .map(v => ({
+                                                    tipo: 'VENTA', fecha: v.fecha, monto: v.total, metodo: v.metodoPago,
+                                                    id: v.id, raw: v,
+                                                    descripcion: `Compra - ${v.productos?.map(p => p.nombre).join(', ') || 'Sin productos'}`,
+                                                    folio: facturas.find(f => f.ventaId === v.id)?.numeroFactura || ''
+                                                }));
+                                            
+                                            const facturasMovs = facturasCliente.map(f => ({
+                                                tipo: 'FACTURA', fecha: f.fecha || f.fechaEmision, monto: f.total, metodo: f.metodoPago,
+                                                id: f.id, raw: f,
+                                                descripcion: `${f.numeroFactura || 'Sin folio'} - ${f.tipoFactura === 'abono' ? 'Nota de Abono' : f.tipoFactura === 'credito' ? 'Crédito' : 'Contado'}`,
+                                                folio: f.numeroFactura || '',
+                                                tipoFactura: f.tipoFactura
+                                            }));
+                                            
+                                            const abonosCliente = abonosData.filter(a => a.clienteId === clienteSeleccionado.id)
+                                                .map(a => ({
+                                                    tipo: 'ABONO', fecha: a.fecha, monto: a.monto, metodo: a.metodoPago,
+                                                    id: a.id, raw: a,
+                                                    descripcion: `Abono ${a.numeroAbono || ''} - ${a.metodoPago === 'efectivo' ? 'Efectivo' : a.metodoPago === 'tarjeta' ? 'Tarjeta' : 'Transferencia'}`,
+                                                    folio: a.numeroFactura || a.numeroAbono || ''
+                                                }));
+
+                                            let movimientos = [...ventasCliente, ...facturasMovs, ...abonosCliente];
+
+                                            // Aplicar filtro
+                                            if (filtroHistorial === 'ventas') movimientos = movimientos.filter(m => m.tipo === 'VENTA');
+                                            else if (filtroHistorial === 'facturas') movimientos = movimientos.filter(m => m.tipo === 'FACTURA');
+                                            else if (filtroHistorial === 'abonos') movimientos = movimientos.filter(m => m.tipo === 'ABONO');
+                                            else if (filtroHistorial === 'fc') movimientos = movimientos.filter(m => m.tipo === 'FACTURA' && (m.tipoFactura === 'credito' || m.folio.startsWith('FC')));
+                                            else if (filtroHistorial === 'fa') movimientos = movimientos.filter(m => m.tipo === 'FACTURA' && (m.tipoFactura !== 'credito' && m.tipoFactura !== 'abono' || m.folio.startsWith('FA')));
+
+                                            // Ordenar por fecha DESC
+                                            movimientos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+                                            if (movimientos.length === 0) {
+                                                return <div style={{ textAlign:'center', color:'#6b7280', padding: '30px' }}>📭 Sin movimientos con este filtro</div>;
+                                            }
+
+                                            // Agrupar por mes
+                                            const meses = {};
+                                            movimientos.forEach(mov => {
+                                                const fecha = parsearFecha(mov.fecha);
+                                                const claveMes = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+                                                const nombreMes = fecha.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' }).toUpperCase();
+                                                if (!meses[claveMes]) meses[claveMes] = { nombre: nombreMes, movimientos: [], totalVendido: 0, totalAbonado: 0, totalFacturas: 0 };
+                                                meses[claveMes].movimientos.push(mov);
+                                                if (mov.tipo === 'VENTA') meses[claveMes].totalVendido += mov.monto;
+                                                else if (mov.tipo === 'ABONO') meses[claveMes].totalAbonado += mov.monto;
+                                                else if (mov.tipo === 'FACTURA') meses[claveMes].totalFacturas += mov.monto;
+                                            });
+
+                                            return Object.entries(meses).map(([clave, mesData]) => (
+                                                <div key={clave} style={{ marginBottom: '16px' }}>
+                                                    {/* Encabezado del mes */}
+                                                    <div style={{
+                                                        background: '#1e293b', color: 'white', padding: '10px 14px', borderRadius: '8px 8px 0 0',
+                                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                                                    }}>
+                                                        <span style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>📅 {mesData.nombre}</span>
+                                                        <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem' }}>
+                                                            {mesData.totalVendido > 0 && <span>🛒 {formatearMoneda(mesData.totalVendido)}</span>}
+                                                            {mesData.totalAbonado > 0 && <span style={{ color: '#86efac' }}>💰 +{formatearMoneda(mesData.totalAbonado)}</span>}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Movimientos del mes */}
+                                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                        {mesData.movimientos.map(mov => {
+                                                            const colorBorde = mov.tipo === 'VENTA' ? '#3b82f6' : mov.tipo === 'ABONO' ? '#10b981' : '#f59e0b';
+                                                            const iconoTipo = mov.tipo === 'VENTA' ? '🛒' : mov.tipo === 'ABONO' ? '💰' : '📄';
+                                                            return (
+                                                                <div key={`${mov.tipo}-${mov.id}`} style={{
+                                                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                                    background: 'white', padding: '10px 14px',
+                                                                    borderBottom: '1px solid #f1f5f9', borderLeft: `4px solid ${colorBorde}`,
+                                                                    cursor: 'pointer', transition: 'background 0.2s'
+                                                                }}
+                                                                onClick={() => {
+                                                                    if (mov.tipo === 'FACTURA') setFacturaSeleccionada(mov.raw);
+                                                                    else if (mov.tipo === 'VENTA') setDetalleVenta(mov.raw);
+                                                                    else {
+                                                                        const factAbono = facturas.find(f => f.abonoId === mov.raw.id || f.numeroAbono === mov.raw.numeroAbono);
+                                                                        if (factAbono) setFacturaSeleccionada(factAbono);
+                                                                        else setDetalleVenta({ ...mov.raw, productos: [{ nombre: 'Abono', cantidad: 1, precioVenta: mov.monto }], total: mov.monto });
+                                                                    }
+                                                                }}
+                                                                >
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                                                                        <span style={{ fontSize: '1.2rem' }}>{iconoTipo}</span>
+                                                                        <div style={{ flex: 1 }}>
+                                                                            <div style={{ fontWeight: '600', color: '#1f2937', fontSize: '0.9rem' }}>{mov.descripcion}</div>
+                                                                            <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '2px' }}>
+                                                                                {parsearFecha(mov.fecha).toLocaleDateString('es-MX')} • {mov.metodo || ''}
+                                                                                {mov.folio && <span style={{ marginLeft: '8px', color: '#3b82f6' }}>📄 {mov.folio}</span>}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                                        <div style={{
+                                                                            fontWeight: 'bold', fontSize: '0.95rem',
+                                                                            color: mov.tipo === 'ABONO' ? '#059669' : '#1f2937'
+                                                                        }}>
+                                                                            {mov.tipo === 'ABONO' ? '+' : ''}{formatearMoneda(mov.monto)}
+                                                                        </div>
+                                                                        <div style={{
+                                                                            padding: '3px 8px', background: '#f1f5f9', border: '1px solid #cbd5e1',
+                                                                            borderRadius: '6px', fontSize: '0.75rem', color: '#334155', fontWeight: '600'
+                                                                        }}>
+                                                                            📄 Ver
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ));
+                                        })()}
+                                    </div>
+                                </div>
+
+                                {/* 📄 Documentos */}
                                 <div className={styles.expedienteSection}>
                                     <h4>📄 Documentos</h4>
                                     <div className={styles.documentos}>
@@ -760,13 +1035,7 @@ export default function ClientesPage() {
                                                         <img 
                                                             src={clienteSeleccionado.credencialURL} 
                                                             alt="Credencial" 
-                                                            style={{ 
-                                                                maxWidth: '100px', 
-                                                                maxHeight: '60px', 
-                                                                borderRadius: '4px',
-                                                                border: '1px solid #ddd',
-                                                                cursor: 'pointer'
-                                                            }}
+                                                            style={{ maxWidth: '100px', maxHeight: '60px', borderRadius: '4px', border: '1px solid #ddd', cursor: 'pointer' }}
                                                             onClick={() => setModalImagen({ show: true, url: clienteSeleccionado.credencialURL })}
                                                         />
                                                     </div>
@@ -784,13 +1053,7 @@ export default function ClientesPage() {
                                                         <img 
                                                             src={clienteSeleccionado.comprobanteURL} 
                                                             alt="Comprobante" 
-                                                            style={{ 
-                                                                maxWidth: '100px', 
-                                                                maxHeight: '60px', 
-                                                                borderRadius: '4px',
-                                                                border: '1px solid #ddd',
-                                                                cursor: 'pointer'
-                                                            }}
+                                                            style={{ maxWidth: '100px', maxHeight: '60px', borderRadius: '4px', border: '1px solid #ddd', cursor: 'pointer' }}
                                                             onClick={() => setModalImagen({ show: true, url: clienteSeleccionado.comprobanteURL })}
                                                         />
                                                     </div>
@@ -808,13 +1071,7 @@ export default function ClientesPage() {
                                                         <img 
                                                             src={clienteSeleccionado.otrosDocURL} 
                                                             alt="Otros" 
-                                                            style={{ 
-                                                                maxWidth: '100px', 
-                                                                maxHeight: '60px', 
-                                                                borderRadius: '4px',
-                                                                border: '1px solid #ddd',
-                                                                cursor: 'pointer'
-                                                            }}
+                                                            style={{ maxWidth: '100px', maxHeight: '60px', borderRadius: '4px', border: '1px solid #ddd', cursor: 'pointer' }}
                                                             onClick={() => setModalImagen({ show: true, url: clienteSeleccionado.otrosDocURL })}
                                                         />
                                                     </div>
@@ -823,77 +1080,6 @@ export default function ClientesPage() {
                                                 )}
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                                
-                                {/* 🆕 Últimos Movimientos (Ventas y Abonos) */}
-                                <div className={styles.expedienteSection} style={{ gridColumn: '1 / -1' }}>
-                                    <h4>📊 Últimos Movimientos</h4>
-                                    <div style={{
-                                        background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', 
-                                        padding: '12px', maxHeight: '300px', overflowY: 'auto', marginTop: '8px'
-                                    }}>
-                                        {(() => {
-                                            // Encontrar facturas del cliente
-                                            const facturasCliente = facturas.filter(f => f.clienteId === clienteSeleccionado.id);
-                                            const idFacturas = facturasCliente.map(f => f.id);
-                                            
-                                            // Extraer ventas
-                                            const ventasCliente = ventasData.filter(v => v.clienteId === clienteSeleccionado.id)
-                                                .map(v => ({
-                                                    tipo: 'VENTA',
-                                                    fecha: v.fecha,
-                                                    monto: v.total,
-                                                    metodo: v.metodoPago,
-                                                    id: v.id,
-                                                    descripcion: `Compra - ${v.productos?.length || 0} prod(s)`
-                                                }));
-                                                
-                                            // Extraer abonos a facturas de este cliente
-                                            const abonosCliente = abonosData.filter(a => idFacturas.includes(a.facturaId))
-                                                .map(a => ({
-                                                    tipo: 'ABONO',
-                                                    fecha: a.fecha,
-                                                    monto: a.monto,
-                                                    metodo: a.metodoPago,
-                                                    id: a.id,
-                                                    descripcion: `Abono a F-${new Date(facturasCliente.find(f=>f.id===a.facturaId)?.fecha || a.fecha).getFullYear()}`
-                                                }));
-                                                
-                                            const movimientos = [...ventasCliente, ...abonosCliente].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
-                                            
-                                            if (movimientos.length === 0) {
-                                                return <div style={{ textAlign:'center', color:'#6b7280', padding: '20px' }}>📭 Sin movimientos recientes</div>;
-                                            }
-                                            
-                                            return (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                    {movimientos.map(mov => (
-                                                        <div key={`${mov.tipo}-${mov.id}`} style={{
-                                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                                            background: 'white', padding: '10px 14px', borderRadius: '6px',
-                                                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)', borderLeft: `4px solid ${mov.tipo === 'VENTA' ? '#3b82f6' : '#10b981'}`
-                                                        }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                                <span style={{ fontSize: '1.2rem' }}>{mov.tipo === 'VENTA' ? '🛒' : '💰'}</span>
-                                                                <div>
-                                                                    <div style={{ fontWeight: '600', color: '#1f2937', fontSize: '0.9rem' }}>{mov.descripcion}</div>
-                                                                    <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '2px' }}>
-                                                                        {parsearFecha(mov.fecha).toLocaleDateString('es-MX')} • {mov.metodo}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div style={{
-                                                                fontWeight: 'bold', fontSize: '0.95rem',
-                                                                color: mov.tipo === 'VENTA' ? '#1f2937' : '#059669'
-                                                            }}>
-                                                                {mov.tipo === 'VENTA' ? '-' : '+'}{formatearMoneda(mov.monto)}
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            );
-                                        })()}
                                     </div>
                                 </div>
                             </div>
