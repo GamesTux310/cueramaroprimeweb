@@ -37,11 +37,10 @@ export default function FacturaDemoPage() {
 
   // Calcular totales
   const subtotal = facturaDemo.productos.reduce((sum, p) => sum + (p.cantidad * p.precioUnitario), 0);
-  const iva = subtotal * 0.16;
-  const total = subtotal + iva;
+  const total = subtotal;
 
   facturaDemo.subtotal = subtotal;
-  facturaDemo.iva = iva;
+  facturaDemo.iva = 0;
   facturaDemo.total = total;
   facturaDemo.buenoFor = total;
 

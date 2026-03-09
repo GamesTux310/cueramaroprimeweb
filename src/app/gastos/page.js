@@ -4,6 +4,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from './gastos.module.css';
 import { getGastos, addGasto, deleteGasto } from '@/lib/storage';
+import { uploadImage } from '@/lib/storageService';
+import ImageModal from '@/components/ImageModal';
+import ImageDropzone from '@/components/ImageDropzone';
+import localforage from 'localforage';
 
 export default function GastosPage() {
   const [gastos, setGastos] = useState([]);
@@ -16,6 +20,15 @@ export default function GastosPage() {
   const [gastoAEliminar, setGastoAEliminar] = useState(null);
   const [confirmarTexto, setConfirmarTexto] = useState('');
   const [mostrarModalEliminar, setMostrarModalEliminar] = useState(false);
+  
+  // Estado para ver detalle de gasto
+  const [gastoSeleccionado, setGastoSeleccionado] = useState(null);
+  
+  // Estado para modal de historial
+  const [mostrarHistorial, setMostrarHistorial] = useState(false);
+  
+  // Estado para imagen ampliada
+  const [imagenAmpliada, setImagenAmpliada] = useState(null);
 
   // Formulario
   const [formData, setFormData] = useState({
@@ -29,6 +42,12 @@ export default function GastosPage() {
   
   // Estado para drag & drop
   const [arrastrando, setArrastrando] = useState(false);
+  const [subiendoImagen, setSubiendoImagen] = useState(false);
+
+  // 🆕 Gastos Fijos
+  const [gastosFijos, setGastosFijos] = useState([]);
+  const [mostrarFormGastoFijo, setMostrarFormGastoFijo] = useState(false);
+  const [formGastoFijo, setFormGastoFijo] = useState({ nombre: '', monto: '', categoria: 'servicios' });
 
   const categorias = [
     { id: 'operacion', nombre: 'Operación', icon: '⚙️', color: '#6366f1' },
@@ -40,8 +59,25 @@ export default function GastosPage() {
     { id: 'otros', nombre: 'Otros', icon: '📋', color: '#64748b' },
   ];
 
+  // Cargar gastos y escuchar cambios
   useEffect(() => {
-    setGastos(getGastos());
+    const cargarGastos = async () => {
+      setGastos(await getGastos());
+    };
+
+    cargarGastos();
+
+    window.addEventListener('cueramaro_data_updated', cargarGastos);
+    return () => window.removeEventListener('cueramaro_data_updated', cargarGastos);
+  }, []);
+
+  // Cargar gastos fijos
+  useEffect(() => {
+    const cargarGastosFijos = async () => {
+      const data = await localforage.getItem('gastosFijos');
+      setGastosFijos(data || []);
+    };
+    cargarGastosFijos();
   }, []);
 
   const showToast = (message, type = 'success') => {
@@ -101,7 +137,7 @@ export default function GastosPage() {
     return categorias.find(c => c.id === categoriaId) || categorias[categorias.length - 1];
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!formData.descripcion || !formData.monto) {
@@ -109,12 +145,12 @@ export default function GastosPage() {
       return;
     }
 
-    const nuevoGasto = addGasto({
+    const nuevoGasto = await addGasto({
       ...formData,
       monto: parseFloat(formData.monto)
     });
 
-    setGastos(getGastos());
+    setGastos(await getGastos());
     setFormData({
       descripcion: '',
       categoria: 'operacion',
@@ -127,51 +163,12 @@ export default function GastosPage() {
     showToast(`Gasto de ${formatearMoneda(nuevoGasto.monto)} registrado`, 'success');
   };
 
-  // Funciones para manejar imagen de comprobante
-  const handleImagenChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      procesarImagen(file);
-    }
-  };
-
-  const procesarImagen = (file) => {
-    if (!file.type.startsWith('image/')) {
-      showToast('Solo se permiten imágenes', 'warning');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) { // 5MB máximo
-      showToast('La imagen es muy grande (máx 5MB)', 'warning');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setFormData({ ...formData, imagenComprobante: e.target.result });
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setArrastrando(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setArrastrando(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setArrastrando(false);
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      procesarImagen(file);
-    }
+  const handleImagenChange = (base64) => {
+    setFormData(prev => ({ ...prev, imagenComprobante: base64 }));
   };
 
   const eliminarImagen = () => {
-    setFormData({ ...formData, imagenComprobante: null });
+    setFormData(prev => ({ ...prev, imagenComprobante: null }));
   };
 
   // Funciones de eliminación
@@ -181,10 +178,10 @@ export default function GastosPage() {
     setMostrarModalEliminar(true);
   };
 
-  const confirmarEliminacion = () => {
+  const confirmarEliminacion = async () => {
     if (confirmarTexto.toLowerCase() === 'eliminar' && gastoAEliminar) {
-      deleteGasto(gastoAEliminar.id);
-      setGastos(getGastos());
+      await deleteGasto(gastoAEliminar.id);
+      setGastos(await getGastos());
       setMostrarModalEliminar(false);
       setGastoAEliminar(null);
       setConfirmarTexto('');
@@ -196,6 +193,37 @@ export default function GastosPage() {
     setMostrarModalEliminar(false);
     setGastoAEliminar(null);
     setConfirmarTexto('');
+  };
+
+  // 🆕 Funciones CRUD de Gastos Fijos
+  const agregarGastoFijo = async () => {
+    if (!formGastoFijo.nombre || !formGastoFijo.monto) return;
+    const nuevo = { id: Date.now(), ...formGastoFijo, monto: parseFloat(formGastoFijo.monto) };
+    const actualizados = [...gastosFijos, nuevo];
+    setGastosFijos(actualizados);
+    await localforage.setItem('gastosFijos', actualizados);
+    setFormGastoFijo({ nombre: '', monto: '', categoria: 'servicios' });
+    setMostrarFormGastoFijo(false);
+    showToast('Gasto fijo agregado', 'success');
+  };
+
+  const eliminarGastoFijo = async (id) => {
+    const actualizados = gastosFijos.filter(g => g.id !== id);
+    setGastosFijos(actualizados);
+    await localforage.setItem('gastosFijos', actualizados);
+    showToast('Gasto fijo eliminado', 'success');
+  };
+
+  const renovarGastoFijo = async (gastoFijo) => {
+    await addGasto({
+      descripcion: `${gastoFijo.nombre} (Fijo mensual)`,
+      categoria: gastoFijo.categoria,
+      monto: gastoFijo.monto,
+      metodoPago: 'efectivo',
+      notas: 'Gasto fijo renovado'
+    });
+    setGastos(await getGastos());
+    showToast(`Gasto fijo "${gastoFijo.nombre}" registrado como gasto del mes`, 'success');
   };
 
   return (
@@ -226,12 +254,20 @@ export default function GastosPage() {
                 </div>
               </div>
             </div>
-            <button 
-              className={styles.nuevoButton}
-              onClick={() => setMostrarFormulario(true)}
-            >
-              + Nuevo Gasto
-            </button>
+            <div className={styles.headerActions}>
+              <button 
+                className={styles.historialButton}
+                onClick={() => setMostrarHistorial(true)}
+              >
+                <span>📋</span> Historial
+              </button>
+              <button 
+                className={styles.nuevoButton}
+                onClick={() => setMostrarFormulario(true)}
+              >
+                + Nuevo Gasto
+              </button>
+            </div>
           </div>
         </header>
 
@@ -294,7 +330,10 @@ export default function GastosPage() {
           </div>
         </section>
 
-        {/* Lista de Gastos */}
+        {/* Layout con Gastos Fijos al lateral */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '20px', alignItems: 'start' }}>
+        
+        {/* Lista de Gastos (Centro) */}
         <section className={styles.listaSection}>
           {gastosFiltrados.length === 0 ? (
             <div className={styles.emptyState}>
@@ -309,7 +348,7 @@ export default function GastosPage() {
               {gastosFiltrados.slice().reverse().map((gasto) => {
                 const catInfo = getCategoriaInfo(gasto.categoria);
                 return (
-                  <div key={gasto.id} className={styles.gastoItem}>
+                  <div key={gasto.id} className={styles.gastoItem} onClick={() => setGastoSeleccionado(gasto)} style={{ cursor: 'pointer' }}>
                     <div 
                       className={styles.gastoIcon}
                       style={{ background: `${catInfo.color}20`, color: catInfo.color }}
@@ -326,10 +365,11 @@ export default function GastosPage() {
                       <span className={styles.gastoMonto}>{formatearMoneda(gasto.monto)}</span>
                       <button 
                         className={styles.btnEliminar}
-                        onClick={() => iniciarEliminacion(gasto)}
+                        style={{ padding: '6px 12px', borderRadius: '6px', background: '#fef2f2', color: '#dc2626', fontWeight: '600', border: '1px solid #fca5a5', fontSize: '0.85rem' }}
+                        onClick={(e) => { e.stopPropagation(); iniciarEliminacion(gasto); }}
                         title="Eliminar"
                       >
-                        🗑️
+                        🗑️ Eliminar
                       </button>
                     </div>
                   </div>
@@ -338,6 +378,110 @@ export default function GastosPage() {
             </div>
           )}
         </section>
+
+        {/* 🆕 Panel Lateral: Gastos Fijos */}
+        <aside style={{
+          background: 'white', borderRadius: '12px', padding: '16px',
+          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', position: 'sticky', top: '80px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: '700', color: '#1f2937', margin: 0 }}>📌 Gastos Fijos</h3>
+            <button
+              onClick={() => setMostrarFormGastoFijo(!mostrarFormGastoFijo)}
+              style={{
+                background: '#6366f1', color: 'white', border: 'none', borderRadius: '6px',
+                padding: '4px 10px', fontSize: '0.8rem', cursor: 'pointer', fontWeight: '600'
+              }}
+            >
+              {mostrarFormGastoFijo ? '✕' : '+ Agregar'}
+            </button>
+          </div>
+
+          {mostrarFormGastoFijo && (
+            <div style={{ marginBottom: '12px', padding: '10px', background: '#f9fafb', borderRadius: '8px' }}>
+              <input
+                type="text" placeholder="Nombre (ej: Renta)"
+                value={formGastoFijo.nombre}
+                onChange={(e) => setFormGastoFijo({ ...formGastoFijo, nombre: e.target.value })}
+                style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #ddd', marginBottom: '6px', fontSize: '0.85rem', boxSizing: 'border-box' }}
+              />
+              <input
+                type="number" placeholder="Monto mensual"
+                value={formGastoFijo.monto}
+                onChange={(e) => setFormGastoFijo({ ...formGastoFijo, monto: e.target.value })}
+                style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #ddd', marginBottom: '6px', fontSize: '0.85rem', boxSizing: 'border-box' }}
+              />
+              <select
+                value={formGastoFijo.categoria}
+                onChange={(e) => setFormGastoFijo({ ...formGastoFijo, categoria: e.target.value })}
+                style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #ddd', marginBottom: '8px', fontSize: '0.85rem', boxSizing: 'border-box' }}
+              >
+                {categorias.map(c => <option key={c.id} value={c.id}>{c.icon} {c.nombre}</option>)}
+              </select>
+              <button
+                onClick={agregarGastoFijo}
+                style={{
+                  width: '100%', padding: '8px', background: '#10b981', color: 'white',
+                  border: 'none', borderRadius: '6px', fontWeight: '600', cursor: 'pointer', fontSize: '0.85rem'
+                }}
+              >
+                ✅ Guardar Gasto Fijo
+              </button>
+            </div>
+          )}
+
+          {gastosFijos.length === 0 ? (
+            <p style={{ color: '#9ca3af', textAlign: 'center', fontSize: '0.85rem', padding: '20px 0' }}>Sin gastos fijos configurados</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {gastosFijos.map(gf => {
+                const catInfo = getCategoriaInfo(gf.categoria);
+                return (
+                  <div key={gf.id} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '10px 12px', background: '#f9fafb', borderRadius: '8px',
+                    borderLeft: `3px solid ${catInfo.color}`
+                  }}>
+                    <div>
+                      <div style={{ fontWeight: '600', fontSize: '0.85rem', color: '#1f2937' }}>{catInfo.icon} {gf.nombre}</div>
+                      <div style={{ fontSize: '0.8rem', color: '#ef4444', fontWeight: '700' }}>{formatearMoneda(gf.monto)}/mes</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <button
+                        onClick={() => renovarGastoFijo(gf)}
+                        title="Registrar este mes"
+                        style={{
+                          background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px',
+                          padding: '4px 8px', fontSize: '0.7rem', cursor: 'pointer', fontWeight: '600'
+                        }}
+                      >
+                        🔄
+                      </button>
+                      <button
+                        onClick={() => eliminarGastoFijo(gf.id)}
+                        title="Quitar"
+                        style={{
+                          background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '6px',
+                          padding: '4px 8px', fontSize: '0.7rem', cursor: 'pointer'
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '8px', marginTop: '4px', textAlign: 'center' }}>
+                <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>Total fijos: </span>
+                <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#1f2937' }}>
+                  {formatearMoneda(gastosFijos.reduce((s, g) => s + g.monto, 0))}/mes
+                </span>
+              </div>
+            </div>
+          )}
+        </aside>
+
+        </div> {/* Fin grid layout */}
 
         {/* Modal Nuevo Gasto */}
         {mostrarFormulario && (
@@ -420,67 +564,11 @@ export default function GastosPage() {
                 {/* 🆕 Campo de Comprobante/Foto */}
                 <div className={styles.formGroup}>
                   <label>📎 Comprobante (opcional)</label>
-                  {formData.imagenComprobante ? (
-                    <div style={{ position: 'relative', display: 'inline-block' }}>
-                      <img 
-                        src={formData.imagenComprobante} 
-                        alt="Comprobante" 
-                        style={{ 
-                          maxWidth: '100%', 
-                          maxHeight: '150px', 
-                          borderRadius: '8px',
-                          border: '2px solid #ddd'
-                        }} 
-                      />
-                      <button
-                        type="button"
-                        onClick={eliminarImagen}
-                        style={{
-                          position: 'absolute',
-                          top: '-8px',
-                          right: '-8px',
-                          background: '#ef4444',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '50%',
-                          width: '24px',
-                          height: '24px',
-                          cursor: 'pointer',
-                          fontSize: '12px'
-                        }}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <div
-                      onDragOver={handleDragOver}
-                      onDragLeave={handleDragLeave}
-                      onDrop={handleDrop}
-                      style={{
-                        border: `2px dashed ${arrastrando ? '#6366f1' : '#ddd'}`,
-                        borderRadius: '12px',
-                        padding: '20px',
-                        textAlign: 'center',
-                        background: arrastrando ? 'rgba(99, 102, 241, 0.1)' : '#f9fafb',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onClick={() => document.getElementById('inputComprobante').click()}
-                    >
-                      <input
-                        type="file"
-                        id="inputComprobante"
-                        accept="image/*"
-                        onChange={handleImagenChange}
-                        style={{ display: 'none' }}
-                      />
-                      <span style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>📷</span>
-                      <p style={{ margin: 0, color: '#666', fontSize: '13px' }}>
-                        Arrastra una imagen aquí o <strong>haz clic</strong> para seleccionar
-                      </p>
-                    </div>
-                  )}
+                  <ImageDropzone
+                    onImageSave={handleImagenChange}
+                    previewUrl={formData.imagenComprobante}
+                    onRemove={eliminarImagen}
+                  />
                 </div>
 
                 <div className={styles.formActions}>
@@ -491,8 +579,13 @@ export default function GastosPage() {
                   >
                     Cancelar
                   </button>
-                  <button type="submit" className={styles.btnGuardar}>
-                    💾 Registrar Gasto
+                  <button 
+                    type="submit" 
+                    className={styles.btnGuardar}
+                    disabled={subiendoImagen}
+                    style={{ opacity: subiendoImagen ? 0.7 : 1 }}
+                  >
+                    {subiendoImagen ? '⏳ Subiendo...' : '💾 Registrar Gasto'}
                   </button>
                 </div>
               </form>
@@ -553,7 +646,155 @@ export default function GastosPage() {
             </div>
           </div>
         )}
+
+        {/* Modal Detalle de Gasto */}
+        {gastoSeleccionado && (
+          <div className={styles.modalOverlay} onClick={() => setGastoSeleccionado(null)}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2>📋 Detalle del Gasto</h2>
+                <button className={styles.closeButton} onClick={() => setGastoSeleccionado(null)}>
+                  ✕
+                </button>
+              </div>
+              <div className={styles.modalBody}>
+                <div className={styles.detalleGasto}>
+                  <div className={styles.detalleRow}>
+                    <span className={styles.detalleLabel}>Descripción:</span>
+                    <span className={styles.detalleValue}>{gastoSeleccionado.descripcion}</span>
+                  </div>
+                  <div className={styles.detalleRow}>
+                    <span className={styles.detalleLabel}>Categoría:</span>
+                    <span className={styles.detalleValue}>
+                      {getCategoriaInfo(gastoSeleccionado.categoria).icon} {getCategoriaInfo(gastoSeleccionado.categoria).nombre}
+                    </span>
+                  </div>
+                  <div className={styles.detalleRow}>
+                    <span className={styles.detalleLabel}>Monto:</span>
+                    <span className={`${styles.detalleValue} ${styles.montoGrande}`}>{formatearMoneda(gastoSeleccionado.monto)}</span>
+                  </div>
+                  <div className={styles.detalleRow}>
+                    <span className={styles.detalleLabel}>Método de Pago:</span>
+                    <span className={styles.detalleValue}>{gastoSeleccionado.metodoPago || 'Efectivo'}</span>
+                  </div>
+                  <div className={styles.detalleRow}>
+                    <span className={styles.detalleLabel}>Fecha:</span>
+                    <span className={styles.detalleValue}>{formatearFecha(gastoSeleccionado.fecha)}</span>
+                  </div>
+                  {gastoSeleccionado.notas && (
+                    <div className={styles.detalleRow}>
+                      <span className={styles.detalleLabel}>Notas:</span>
+                      <span className={styles.detalleValue}>{gastoSeleccionado.notas}</span>
+                    </div>
+                  )}
+                  {gastoSeleccionado.imagenComprobante && (
+                    <div className={styles.detalleRow}>
+                      <span className={styles.detalleLabel}>Comprobante:</span>
+                      <div className={styles.comprobantePreview}>
+                        <img 
+                          src={gastoSeleccionado.imagenComprobante} 
+                          alt="Comprobante" 
+                          style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', cursor: 'pointer' }}
+                          onClick={() => setImagenAmpliada(gastoSeleccionado.imagenComprobante)}
+                        />
+                        <span className={styles.clickToEnlarge}>Toca para ampliar</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className={styles.detalleActions}>
+                  <button 
+                    className={styles.btnEliminarGasto}
+                    onClick={() => {
+                      setGastoSeleccionado(null);
+                      iniciarEliminacion(gastoSeleccionado);
+                    }}
+                  >
+                    🗑️ Eliminar Gasto
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Historial de Gastos */}
+        {mostrarHistorial && (
+          <div className={styles.modalOverlay} onClick={() => setMostrarHistorial(false)}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h2>📋 Historial de Gastos</h2>
+                <button className={styles.closeButton} onClick={() => setMostrarHistorial(false)}>
+                  ✕
+                </button>
+              </div>
+              <div className={styles.modalBody}>
+                {gastos.length === 0 ? (
+                  <div className={styles.emptyState}>
+                    <span>📭</span>
+                    <p>No hay gastos registrados</p>
+                  </div>
+                ) : (
+                  <div className={styles.historialList}>
+                    {gastos.slice().reverse().map((gasto) => {
+                      const catInfo = getCategoriaInfo(gasto.categoria);
+                      return (
+                        <div key={gasto.id} className={styles.historialItem}>
+                          <div className={styles.historialHeader}>
+                            <span 
+                              className={styles.historialIcon}
+                              style={{ background: `${catInfo.color}20`, color: catInfo.color }}
+                            >
+                              {catInfo.icon}
+                            </span>
+                            <span className={styles.historialFecha}>{formatearFecha(gasto.fecha)}</span>
+                          </div>
+                          <div className={styles.historialBody}>
+                            <span className={styles.historialDescripcion}>{gasto.descripcion}</span>
+                            <span className={styles.historialCategoria}>{catInfo.nombre}</span>
+                          </div>
+                          <div className={styles.historialFooter}>
+                            <span className={`${styles.metodoBadge} ${styles[gasto.metodoPago]}`}>
+                              {gasto.metodoPago === 'efectivo' ? '💵 Efectivo' : 
+                               gasto.metodoPago === 'transferencia' ? '🏦 Transferencia' : '💳 Tarjeta'}
+                            </span>
+                            <div className={styles.historialActions}>
+                              <span className={styles.historialMonto}>{formatearMoneda(gasto.monto)}</span>
+                              <button 
+                                className={styles.btnEliminarHistorial}
+                                style={{ 
+                                  padding: '6px 12px', borderRadius: '6px', border: '1px solid #fca5a5', 
+                                  background: '#fef2f2', color: '#dc2626', fontWeight: '600', 
+                                  display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.85rem'
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  iniciarEliminacion(gasto);
+                                }}
+                                title="Eliminar gasto"
+                              >
+                                <span>🗑️</span> Eliminar Gasto
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
+      
+      {/* Modal para imagen ampliada */}
+      {imagenAmpliada && (
+        <ImageModal 
+          imageUrl={imagenAmpliada} 
+          onClose={() => setImagenAmpliada(null)} 
+        />
+      )}
     </>
   );
 }

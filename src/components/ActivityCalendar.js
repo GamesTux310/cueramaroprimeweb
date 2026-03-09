@@ -2,7 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import styles from './ActivityCalendar.module.css';
-import { getVentas, getCompras, getAbonos, getClientes, getProveedores, getGastos, getNotas, getMermas, getProductos } from '@/lib/storage';
+import { 
+  getVentas, 
+  getCompras, 
+  getAbonos, 
+  getClientes, 
+  getProveedores, 
+  getProductos,
+  updateVenta 
+} from '@/lib/storage';
+import { getUnifiedEvents, addCustomEvent } from '@/lib/calendar';
 import ImageModal from './ImageModal';
 import FacturaPreview from './factura/FacturaPreview';
 
@@ -27,6 +36,62 @@ export default function ActivityCalendar({ type = 'ventas', clienteId = null, pr
   const [productos, setProductos] = useState([]); // 🆕 Productos para imágenes
   const [modalImagen, setModalImagen] = useState({ show: false, url: '' }); // 🆕 Modal de imagen
   const [mostrarFactura, setMostrarFactura] = useState(false); // 🆕 Modal de imagen
+  const [mostrarNuevoEvento, setMostrarNuevoEvento] = useState(false); // 🆕 Modal Nuevo Evento
+  const [nuevoEvento, setNuevoEvento] = useState({ titulo: '', descripcion: '', fecha: new Date().toISOString().split('T')[0], hora: '12:00' });
+
+  const [edicionFecha, setEdicionFecha] = useState(false); // 🆕 Estado para editar fecha
+  const [nuevaFechaVencimiento, setNuevaFechaVencimiento] = useState(''); // 🆕 Valor temporal fecha
+
+  const handleGuardarNuevaFecha = async () => {
+    if (!actividadSeleccionada || !nuevaFechaVencimiento) return;
+    
+    // Preparar historial de cambios
+    const fechaAnterior = actividadSeleccionada.fechaVencimiento;
+    const historialNuevo = [
+      ...(actividadSeleccionada.historialVencimientos || []),
+      {
+        fechaAnterior: fechaAnterior || 'Sin definir',
+        fechaNueva: nuevaFechaVencimiento,
+        fechaCambio: new Date().toISOString()
+      }
+    ];
+
+    // 1. Actualizar en Storage con historial
+    await updateVenta(actividadSeleccionada.originalId, {
+      fechaVencimiento: nuevaFechaVencimiento,
+      historialVencimientos: historialNuevo
+    });
+    
+    // 2. Actualizar estado local para reflejo inmediato
+    const actividadActualizada = { 
+      ...actividadSeleccionada, 
+      fechaVencimiento: nuevaFechaVencimiento,
+      historialVencimientos: historialNuevo
+    };
+    setActividadSeleccionada(actividadActualizada);
+    setEdicionFecha(false);
+    
+    // 3. Disparar evento para recargar calendario
+    window.dispatchEvent(new Event('cueramaro_data_updated'));
+    
+    alert('Fecha actualizada y cambio registrado en el historial.');
+  };
+
+  const handleGuardarEvento = async (e) => {
+    e.preventDefault();
+    if (!nuevoEvento.titulo) return;
+    
+    await addCustomEvent({
+      ...nuevoEvento,
+      fecha: `${nuevoEvento.fecha}T${nuevoEvento.hora}:00.000Z` // Formato ISO simple
+    });
+    
+    setMostrarNuevoEvento(false);
+    setNuevoEvento({ titulo: '', descripcion: '', fecha: new Date().toISOString().split('T')[0], hora: '12:00' });
+    
+    // Recargar datos manual (aunque el listener debería hacerlo)
+    window.dispatchEvent(new Event('cueramaro_data_updated'));
+  };
 
   const meses = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -37,29 +102,43 @@ export default function ActivityCalendar({ type = 'ventas', clienteId = null, pr
 
   // Cargar datos según el tipo y escuchar cambios
   useEffect(() => {
-    const cargarDatos = () => {
+    const cargarDatos = async () => {
       let datos = [];
+      const clientesBase = await getClientes();
+      
       if (type === 'general') {
-          const ventas = getVentas().map(v => ({ ...v, tipo: 'venta', monto: v.total }));
-          const compras = getCompras().map(c => ({ ...c, tipo: 'compra', monto: c.total }));
-          const abonos = getAbonos().map(a => ({ ...a, tipo: 'abono', monto: a.monto }));
-          const gastos = getGastos().map(g => ({ ...g, tipo: 'gasto', monto: g.monto }));
-          const notas = getNotas().map(n => ({ ...n, tipo: 'nota', monto: 0 }));
-          const mermas = getMermas().map(m => ({ ...m, tipo: 'merma', monto: m.costoTotal }));
+          // 🆕 Usar la nueva API centralizada
+          datos = await getUnifiedEvents();
           
-          datos = [...ventas, ...compras, ...abonos, ...gastos, ...notas, ...mermas];
+          // 🆕 AGREGAR VENCIMIENTOS DE VENTAS A CRÉDITO
+          const ventasCredito = (await getVentas()).filter(v => v.tipoFactura === 'credito' && v.fechaVencimiento);
+          const eventosVencimiento = ventasCredito.map(v => {
+              const cli = clientesBase.find(c => c.id === v.clienteId);
+              return {
+                  id: `vencimiento-${v.id}`,
+                  tipo: 'recordatorio', // Usamos tipo recordatorio para que salga en amarillo/campana
+                  titulo: `🔴 Vence Venta #${v.id}`,
+                  descripcion: `Vencimiento de crédito de ${cli ? cli.nombre : 'Cliente Desconocido'}. Monto: ${formatearMoneda(v.total)}`,
+                  fecha: `${v.fechaVencimiento}T09:00:00.000Z`, // Asumimos 9 AM para ordenar
+                  monto: v.total,
+                  clienteId: v.clienteId
+              };
+          });
+          
+          datos = [...datos, ...eventosVencimiento];
+
       } else if (type === 'ventas') {
-        datos = getVentas().map(v => ({ ...v, tipo: 'venta', monto: v.total }));
+        datos = (await getVentas()).map(v => ({ ...v, tipo: 'venta', monto: v.total }));
         if (clienteId) {
           datos = datos.filter(v => v.clienteId === clienteId);
         }
       } else if (type === 'compras') {
-        datos = getCompras().map(c => ({ ...c, tipo: 'compra', monto: c.total }));
+        datos = (await getCompras()).map(c => ({ ...c, tipo: 'compra', monto: c.total }));
         if (proveedorId) {
           datos = datos.filter(c => c.proveedorId === proveedorId);
         }
       } else if (type === 'abonos') {
-        datos = getAbonos().map(a => ({ ...a, tipo: 'abono', monto: a.monto }));
+        datos = (await getAbonos()).map(a => ({ ...a, tipo: 'abono', monto: a.monto }));
         if (clienteId) {
           datos = datos.filter(a => a.clienteId === clienteId);
         }
@@ -69,9 +148,9 @@ export default function ActivityCalendar({ type = 'ventas', clienteId = null, pr
       datos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
       
       setActividades(datos);
-      setClientes(getClientes());
-      setProveedores(getProveedores());
-      setProductos(getProductos()); // 🆕 Cargar productos
+      setClientes(clientesBase);
+      setProveedores(await getProveedores());
+      setProductos(await getProductos()); // 🆕 Cargar productos
     };
 
     cargarDatos();
@@ -86,7 +165,8 @@ export default function ActivityCalendar({ type = 'ventas', clienteId = null, pr
     abono: true,
     gasto: true,
     nota: true,
-    merma: true
+    merma: true,
+    recordatorio: true // 🆕
   });
 
   const toggleFiltro = (tipo) => {
@@ -216,6 +296,7 @@ export default function ActivityCalendar({ type = 'ventas', clienteId = null, pr
         case 'gasto': return '💸';
         case 'nota': return '📝';
         case 'merma': return '📉';
+        case 'recordatorio': return '🔔';
         default: return '🔹';
     }
   };
@@ -235,6 +316,7 @@ export default function ActivityCalendar({ type = 'ventas', clienteId = null, pr
   };
 
   return (
+    <>
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
@@ -271,6 +353,15 @@ export default function ActivityCalendar({ type = 'ventas', clienteId = null, pr
             <div className={styles.filtrosContainer}>
               <span className={styles.filtrosLabel}>Filtrar Actividad:</span>
               <div className={styles.filtrosGrid}>
+                {/* Botón Nuevo Recordatorio */}
+                <button 
+                  className={styles.btnNuevoEvento}
+                  onClick={() => setMostrarNuevoEvento(true)}
+                  style={{ gridColumn: '1 / -1', marginBottom: '10px', background: '#3b82f6', color: 'white', border: 'none', padding: '8px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  + Nuevo Recordatorio
+                </button>
+
                 <button 
                   className={`${styles.filtroBtn} ${filtros.venta ? styles.activo : ''} ${styles.fVenta}`}
                   onClick={() => toggleFiltro('venta')}
@@ -306,6 +397,13 @@ export default function ActivityCalendar({ type = 'ventas', clienteId = null, pr
                   onClick={() => toggleFiltro('nota')}
                 >
                   📝 Notas
+                </button>
+                <button 
+                  className={`${styles.filtroBtn} ${filtros.recordatorio ? styles.activo : ''}`}
+                  onClick={() => toggleFiltro('recordatorio')}
+                  style={{ background: filtros.recordatorio ? '#64748b' : '#f1f5f9', color: filtros.recordatorio ? 'white' : '#64748b' }}
+                >
+                  🔔 Recordatorios
                 </button>
               </div>
             </div>
@@ -798,6 +896,78 @@ export default function ActivityCalendar({ type = 'ventas', clienteId = null, pr
                                  </span>
                              </div>
                          )}
+
+                         {/* 📅 FECHA DE VENCIMIENTO (Editable para Crédito) */}
+                         {actividad.tipo === 'venta' && actividad.tipoFactura === 'credito' && (
+                           <div style={{ marginTop: '12px', padding: '10px', background: '#fff7ed', borderRadius: '8px', border: '1px solid #ffedd5' }}>
+                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                               <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#c2410c' }}>📅 Vencimiento</span>
+                               {!edicionFecha && (
+                                 <button 
+                                   onClick={() => {
+                                     setNuevaFechaVencimiento(actividad.fechaVencimiento || '');
+                                     setEdicionFecha(true);
+                                   }}
+                                   style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' }}
+                                   title="Cambiar fecha de pago"
+                                 >
+                                   ✏️
+                                 </button>
+                               )}
+                             </div>
+                             
+                             {edicionFecha ? (
+                               <div style={{ display: 'flex', gap: '5px' }}>
+                                 <input 
+                                   type="date" 
+                                   value={nuevaFechaVencimiento}
+                                   onChange={(e) => setNuevaFechaVencimiento(e.target.value)}
+                                   min={new Date().toISOString().split('T')[0]} // No permitir fechas pasadas
+                                   style={{ flex: 1, padding: '4px', borderRadius: '4px', border: '1px solid #ddd' }}
+                                 />
+                                 <button 
+                                   onClick={handleGuardarNuevaFecha}
+                                   style={{ background: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', padding: '0 8px', cursor: 'pointer' }}
+                                 >
+                                   ✓
+                                 </button>
+                                 <button 
+                                   onClick={() => setEdicionFecha(false)}
+                                   style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', padding: '0 8px', cursor: 'pointer' }}
+                                 >
+                                   ✕
+                                 </button>
+                               </div>
+                             ) : (
+                               <div style={{ fontSize: '0.9rem', color: '#9a3412' }}>
+                                 {/* Mostrar historial si existe */}
+                                 {actividad.historialVencimientos && actividad.historialVencimientos.length > 0 && (
+                                   <div style={{ marginBottom: '8px', fontSize: '0.8rem', color: '#7c2d12', borderBottom: '1px dashed #fdba74', paddingBottom: '4px' }}>
+                                     <strong>Historial de cambios:</strong>
+                                     {actividad.historialVencimientos.map((cambio, idx) => (
+                                       <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                                         <span style={{ textDecoration: 'line-through', color: '#9ca3af' }}>
+                                           {cambio.fechaAnterior === 'Sin definir' ? 'Inicial' : new Date(cambio.fechaAnterior + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}
+                                         </span>
+                                         <span>→</span>
+                                         <span>
+                                           {new Date(cambio.fechaNueva + 'T12:00:00').toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })}
+                                         </span>
+                                       </div>
+                                     ))}
+                                   </div>
+                                 )}
+                                 
+                                 {/* Fecha Actual Vigente */}
+                                 <div style={{ fontWeight: 'bold' }}>
+                                   {actividad.fechaVencimiento 
+                                     ? new Date(actividad.fechaVencimiento + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' }) 
+                                     : 'Sin definir'}
+                                 </div>
+                               </div>
+                             )}
+                           </div>
+                         )}
                        </div>
                      </div>
 
@@ -884,5 +1054,76 @@ export default function ActivityCalendar({ type = 'ventas', clienteId = null, pr
         </div>
       </div>
     </div>
+      {/* Modal Nuevo Evento */}
+      {mostrarNuevoEvento && (
+        <div className={styles.modalOverlay} style={{ zIndex: 1100 }} onClick={() => setMostrarNuevoEvento(false)}>
+          <div className={styles.modal} style={{ maxWidth: '500px', height: 'auto' }} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>🔔 Nuevo Recordatorio</h2>
+              <button className={styles.closeButton} onClick={() => setMostrarNuevoEvento(false)}>✕</button>
+            </div>
+            <div className={styles.modalBody}>
+              <form onSubmit={handleGuardarEvento} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Título</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={nuevoEvento.titulo}
+                    onChange={e => setNuevoEvento({...nuevoEvento, titulo: e.target.value})}
+                    placeholder="Ej. Pagar Luz, Cita Proveedor..."
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                  />
+                </div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Fecha</label>
+                    <input 
+                      type="date" 
+                      required
+                      value={nuevoEvento.fecha}
+                      onChange={e => setNuevoEvento({...nuevoEvento, fecha: e.target.value})}
+                      style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Hora</label>
+                    <input 
+                      type="time" 
+                      required
+                      value={nuevoEvento.hora}
+                      onChange={e => setNuevoEvento({...nuevoEvento, hora: e.target.value})}
+                      style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Descripción (Opcional)</label>
+                  <textarea 
+                    value={nuevoEvento.descripcion}
+                    onChange={e => setNuevoEvento({...nuevoEvento, descripcion: e.target.value})}
+                    placeholder="Detalles adicionales..."
+                    rows={3}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                  />
+                </div>
+
+                <button 
+                  type="submit"
+                  style={{ 
+                    background: '#3b82f6', color: 'white', padding: '12px', 
+                    border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px' 
+                  }}
+                >
+                  Guardar Recordatorio
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

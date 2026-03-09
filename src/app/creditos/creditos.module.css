@@ -353,6 +353,15 @@
   overflow-y: auto;
 }
 
+.modalFooter {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 20px 28px;
+  border-top: 1px solid var(--gray-100);
+  background: var(--gray-50);
+}
+
 /* Resumen Cliente */
 .clienteResumen {
   display: flex;

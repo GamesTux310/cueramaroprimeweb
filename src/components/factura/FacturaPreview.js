@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import FacturaTemplate from './FacturaTemplate';
 import { generarFacturaPDF, imprimirFactura } from './FacturaGenerator';
 import styles from './FacturaPreview.module.css';
+import localforage from 'localforage';
 
 export default function FacturaPreview({ factura, onClose, onFacturaGuardada }) {
   const [generando, setGenerando] = useState(false);
@@ -42,22 +43,24 @@ export default function FacturaPreview({ factura, onClose, onFacturaGuardada }) 
     imprimirFactura('factura-template', factura.numeroFactura || 'Factura');
   };
 
-  const guardarEnHistorial = (factura) => {
+  const guardarEnHistorial = async (factura) => {
     try {
-      const historial = JSON.parse(localStorage.getItem('historialFacturas') || '[]');
+      const data = await localforage.getItem('historialFacturas');
+      const historial = data || [];
       const nuevaFactura = {
         ...factura,
         fechaGeneracion: new Date().toISOString(),
         id: Date.now()
       };
       historial.unshift(nuevaFactura);
-      localStorage.setItem('historialFacturas', JSON.stringify(historial));
+      await localforage.setItem('historialFacturas', historial);
       
       // Actualizar contador de folios
       const ultimoFolio = parseInt(factura.numeroFactura?.split('-').pop() || '0');
-      const contadorActual = parseInt(localStorage.getItem('contadorFolios') || '0');
+      const contData = await localforage.getItem('contadorFolios');
+      const contadorActual = parseInt(contData || '0');
       if (ultimoFolio > contadorActual) {
-        localStorage.setItem('contadorFolios', ultimoFolio.toString());
+        await localforage.setItem('contadorFolios', ultimoFolio.toString());
       }
     } catch (error) {
       console.error('Error al guardar en historial:', error);

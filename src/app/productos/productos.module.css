@@ -463,6 +463,7 @@
   gap: 8px;
   margin-top: 16px;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .btnAction {
@@ -479,6 +480,56 @@
 .btnAction:hover {
   background: var(--primary-100);
   transform: scale(1.1);
+}
+
+.cardActionsColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gray-100);
+}
+
+.btnActionFull {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 20px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  background: var(--gray-50);
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btnActionFull:hover {
+  background: var(--primary-50);
+  border-color: var(--primary-300);
+  color: var(--primary-700);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.btnActionFull:active {
+  transform: translateY(0);
+}
+
+.btnDeleteFull {
+  color: #ef4444;
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.btnDeleteFull:hover {
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #b91c1c;
 }
 
 /* Tabla */
@@ -611,6 +662,7 @@
 .acciones {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .btnAccion {
@@ -627,6 +679,40 @@
 .btnAccion:hover {
   background: var(--primary-100);
   transform: scale(1.1);
+}
+
+.btnActionWithText {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--gray-100);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.btnActionWithText:hover {
+  background: var(--primary-100);
+  color: var(--primary-700);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.btnDeleteWithText {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.btnDeleteWithText:hover {
+  background: #fecaca;
+  color: #b91c1c;
 }
 
 /* Modal */

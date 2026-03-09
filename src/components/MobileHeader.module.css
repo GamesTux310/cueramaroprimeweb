@@ -1,0 +1,210 @@
+/* MobileHeader.module.css - Estilos para navegación móvil */
+
+/* Header Móvil fijo */
+.mobileHeader {
+  display: none; /* Oculto por defecto en desktop */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 200;
+  padding: 0 16px;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.25);
+}
+
+/* Botón hamburguesa */
+.menuButton {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.menuButton:active {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(0.95);
+}
+
+.hamburger {
+  width: 20px;
+  height: 2px;
+  background: white;
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+
+/* Título del header */
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+}
+
+.headerIcon {
+  font-size: 1.4rem;
+}
+
+.headerTitle h1 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.headerSpacer {
+  width: 44px; /* Mismo tamaño que el botón para centrar el título */
+}
+
+/* Overlay del menú */
+.menuOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 250;
+  animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Menú deslizante */
+.slideMenu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 280px;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.98);
+  backdrop-filter: blur(20px);
+  z-index: 300;
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.3);
+}
+
+.slideMenu.open {
+  transform: translateX(0);
+}
+
+/* Header del menú */
+.menuHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.menuLogo {
+  height: 45px;
+  width: auto;
+  object-fit: contain;
+}
+
+.closeButton {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.closeButton:active {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+/* Contenido del menú */
+.menuContent {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.menuSection {
+  margin-bottom: 20px;
+}
+
+.menuSectionTitle {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 0 12px;
+  margin-bottom: 8px;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.menuItem:active {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.menuItem.active {
+  background: var(--primary-600, #2563eb);
+  color: white;
+  font-weight: 600;
+}
+
+.menuItemIcon {
+  font-size: 1.3rem;
+}
+
+/* Mostrar en móvil */
+@media (max-width: 768px) {
+  .mobileHeader {
+    display: flex;
+  }
+}
+
+/* Ajustes para pantallas muy pequeñas */
+@media (max-width: 320px) {
+  .slideMenu {
+    width: 100%;
+  }
+  
+  .headerTitle h1 {
+    font-size: 0.95rem;
+  }
+}

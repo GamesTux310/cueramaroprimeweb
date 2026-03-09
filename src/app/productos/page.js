@@ -3,9 +3,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from './productos.module.css';
-import { getProductos, addProducto, updateProducto, saveProductos, actualizarStock, getProveedores, addCompra, getLotes, getCompras, getVentas } from '@/lib/storage';
+import { getProductos, addProducto, updateProducto, saveProductos, actualizarStock, getProveedores, addCompra, getLotes, getCompras, getVentas, registrarMerma } from '@/lib/storage';
+import { compressImageToBase64 } from '@/lib/imageHelper';
+import { parseDecimal, formatearMoneda as formatearMonedaGlobal } from '@/lib/numberToText';
 import ImageModal from '@/components/ImageModal';
 import CurrencyInput from '@/components/CurrencyInput';
+import ImageDropzone from '@/components/ImageDropzone';
 
 const categorias = ['Todas', 'Res', 'Cerdo', 'Pollo', 'Embutidos'];
 
@@ -29,7 +32,8 @@ export default function ProductosPage() {
   const [proveedorId, setProveedorId] = useState('');
   const [precioCompra, setPrecioCompra] = useState('');
   const [nuevoPrecioVenta, setNuevoPrecioVenta] = useState('');
-  const [adjuntoCompra, setAdjuntoCompra] = useState(null); // 🆕 Adjunto de comprobante
+  const [adjuntoCompra, setAdjuntoCompra] = useState(null); 
+  const [tipoCompra, setTipoCompra] = useState('contado'); // 🆕 Estado para tipo de compra
   
   // 🆕 Estado para Modal Historial de Movimientos
   const [mostrarModalHistorial, setMostrarModalHistorial] = useState(false);
@@ -37,6 +41,17 @@ export default function ProductosPage() {
   const [movimientosProducto, setMovimientosProducto] = useState([]);
   
   const [modalImagen, setModalImagen] = useState({ show: false, url: '' });
+  
+  // Estados de carga de imágenes
+  const [subiendoImagenProducto, setSubiendoImagenProducto] = useState(false);
+  const [subiendoAdjuntoCompra, setSubiendoAdjuntoCompra] = useState(false);
+
+  // 🆕 Estado para Modal Merma
+  const [mostrarModalMerma, setMostrarModalMerma] = useState(false);
+  const [productoMerma, setProductoMerma] = useState(null); // ID del producto
+  const [cantidadMerma, setCantidadMerma] = useState('');
+  const [motivoMerma, setMotivoMerma] = useState('caducidad');
+  const [notaMerma, setNotaMerma] = useState('');
   
   // Estados para eliminación segura
   const [productoAEliminar, setProductoAEliminar] = useState(null);
@@ -59,16 +74,27 @@ export default function ProductosPage() {
     stockMinimo: '10',
   });
 
-  // Cargar productos y proveedores al montar
+  // Cargar productos y proveedores al montar y escuchar cambios
   useEffect(() => {
-    setProductos(getProductos());
-    setProveedores(getProveedores());
+    const cargarDatos = async () => {
+      setProductos(await getProductos());
+      setProveedores(await getProveedores());
+    };
+
+    cargarDatos();
+
+    window.addEventListener('cueramaro_data_updated', cargarDatos);
+    return () => window.removeEventListener('cueramaro_data_updated', cargarDatos);
   }, []);
 
   // Filtrar productos
-  const productosFiltrados = productos.filter(producto => {
-    const coincideBusqueda = producto.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-                             producto.categoria.toLowerCase().includes(busqueda.toLowerCase());
+  const productosFiltrados = (productos || []).filter(producto => {
+    const nombreSafe = producto.nombre || '';
+    const categoriaSafe = producto.categoria || '';
+    const busquedaSafe = busqueda || '';
+
+    const coincideBusqueda = nombreSafe.toLowerCase().includes(busquedaSafe.toLowerCase()) ||
+                             categoriaSafe.toLowerCase().includes(busquedaSafe.toLowerCase());
     const coincideCategoria = filtroCategoria === 'Todas' || producto.categoria === filtroCategoria;
     const coincideStock = filtroStock === 'todos' || 
                          (filtroStock === 'bajo' && producto.stock <= producto.stockMinimo) ||
@@ -85,12 +111,15 @@ export default function ProductosPage() {
     : 0;
 
   const formatearMoneda = (cantidad) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(cantidad);
+    return formatearMonedaGlobal(cantidad);
+  };
+
+  const formatearStock = (cantidad) => {
+    // Para enteros puros omitir decimales, para decimales truncar a 2
+    if (Number.isInteger(Number(cantidad))) {
+      return Number(cantidad).toString();
+    }
+    return Number(cantidad || 0).toFixed(2);
   };
 
   const calcularMargen = (compra, venta) => {
@@ -116,6 +145,13 @@ export default function ProductosPage() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Validación para campos numéricos que ahora son texto (Stock)
+    if (name === 'stock' || name === 'stockMinimo') {
+       // Permitir solo dígitos, punto, coma y espacios
+       if (!/^[0-9.,\s]*$/.test(value)) return;
+    }
+
     // Forzar mayúsculas en campos de texto específicos
     if (name === 'nombre' || name === 'descripcion' || name === 'categoria') {
       setFormData(prev => ({
@@ -130,7 +166,33 @@ export default function ProductosPage() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleRegistrarMerma = async (e) => {
+    e.preventDefault();
+    if (!productoMerma || !cantidadMerma) return;
+
+    try {
+      await registrarMerma({
+        productoId: parseInt(productoMerma),
+        cantidad: parseDecimal(cantidadMerma),
+        motivo: motivoMerma,
+        nota: notaMerma
+      });
+
+      setToast({ show: true, message: 'Merma registrada correctamente', type: 'success' });
+      setMostrarModalMerma(false);
+      setProductoMerma(null);
+      setCantidadMerma('');
+      setNotaMerma('');
+      
+      // Recargar productos
+      setProductos(await getProductos());
+    } catch (error) {
+      console.error(error);
+      setToast({ show: true, message: 'Error al registrar merma', type: 'error' });
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setGuardando(true);
 
@@ -147,26 +209,26 @@ export default function ProductosPage() {
       unidad: formData.unidad,
       estado: formData.estado,
       descripcion: formData.descripcion || '',
-      precioCompra: parseFloat(formData.precioCompra),
-      precioVenta: parseFloat(formData.precioVenta),
-      stock: parseInt(formData.stock) || 0,
-      stockMinimo: parseInt(formData.stockMinimo) || 10,
+      precioCompra: parseDecimal(formData.precioCompra),
+      precioVenta: parseDecimal(formData.precioVenta),
+      stock: parseDecimal(formData.stock),
+      stockMinimo: parseDecimal(formData.stockMinimo) || 10,
       imagenURL: formData.imagenURL,
     };
 
     try {
       if (productoEditar) {
         // Actualizar producto existente
-        updateProducto(productoEditar.id, productoData);
+        await updateProducto(productoEditar.id, productoData);
         showToast(`Producto "${productoData.nombre}" actualizado`, 'success');
       } else {
         // Agregar nuevo producto
-        addProducto(productoData);
+        await addProducto(productoData);
         showToast(`Producto "${productoData.nombre}" guardado`, 'success');
       }
 
       // Actualizar lista de productos
-      setProductos(getProductos());
+      setProductos(await getProductos());
 
       // Limpiar formulario y cerrar modal
       setFormData({
@@ -206,10 +268,10 @@ export default function ProductosPage() {
     setMostrarModalEliminar(true);
   };
 
-  const confirmarEliminacion = () => {
+  const confirmarEliminacion = async () => {
     if (confirmarTexto.toLowerCase() === 'eliminar' && productoAEliminar) {
       const productosActualizados = productos.filter(p => p.id !== productoAEliminar.id);
-      saveProductos(productosActualizados);
+      await saveProductos(productosActualizados);
       setProductos(productosActualizados);
       setMostrarModalEliminar(false);
       setProductoAEliminar(null);
@@ -218,22 +280,28 @@ export default function ProductosPage() {
     }
   };
 
-  const procesarImagen = (file) => {
+  const procesarImagen = async (file) => {
     if (!file.type.startsWith('image/')) {
       showToast('Solo se permiten imágenes', 'warning');
       return;
     }
     
-    // Advertencia    // Validar tamaño (10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      showToast('⚠️ La imagen es grande (>10MB). Podría fallar al guardar.', 'warning');
+    // Advertencia    // Validar tamaño (20MB)
+    if (file.size > 20 * 1024 * 1024) {
+      showToast('⚠️ La imagen es grande (>20MB). Podría fallar al guardar.', 'warning');
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setFormData(prev => ({ ...prev, imagenURL: e.target.result }));
-    };
-    reader.readAsDataURL(file);
+    try {
+        setSubiendoImagenProducto(true);
+        const base64 = await compressImageToBase64(file);
+        setFormData(prev => ({ ...prev, imagenURL: base64 }));
+        showToast('Imagen lista para guardar', 'success');
+    } catch (error) {
+        console.error('Error al procesar imagen:', error);
+        showToast('Error al procesar la imagen', 'error');
+    } finally {
+        setSubiendoImagenProducto(false);
+    }
   };
 
   const handleImageChange = (e) => {
@@ -285,8 +353,8 @@ export default function ProductosPage() {
       descripcion: producto.descripcion || '',
       precioCompra: producto.precioCompra.toString(),
       precioVenta: producto.precioVenta.toString(),
-      stock: producto.stock.toString(),
-      stockMinimo: producto.stockMinimo.toString(),
+      stock: Number(producto.stock).toFixed(2),
+      stockMinimo: Number(producto.stockMinimo).toFixed(2),
       imagenURL: producto.imagenURL || null,
     });
     setMostrarFormulario(true);
@@ -297,19 +365,20 @@ export default function ProductosPage() {
     setCantidadStock('');
     // Reset compra values
     setEsCompra(false);
-    setProveedorId('');
-    setPrecioCompra(producto.precioCompra.toString());
-    setNuevoPrecioVenta(producto.precioVenta.toString());
+    setProveedorId(producto.proveedorId ? producto.proveedorId.toString() : '');
+    setPrecioCompra(producto.precioCompra ? producto.precioCompra.toString() : '');
+    setNuevoPrecioVenta(producto.precioVenta ? producto.precioVenta.toString() : '');
     setAdjuntoCompra(null); // 🆕 Reset adjunto
     setMostrarModalStock(true);
   };
 
   // 🆕 Abrir historial de movimientos
-  const abrirHistorial = (producto) => {
+  const abrirHistorial = async (producto) => {
     setProductoHistorial(producto);
     
     // Obtener compras del producto
-    const compras = getCompras()
+    const comprasData = await getCompras();
+    const compras = comprasData
       .filter(c => c.productoId === producto.id)
       .map(c => ({
         tipo: 'compra',
@@ -324,7 +393,7 @@ export default function ProductosPage() {
       }));
     
     // Obtener ventas del producto
-    const ventasData = getVentas();
+    const ventasData = await getVentas();
     const ventas = [];
     ventasData.forEach(v => {
       const itemVendido = v.productos?.find(p => p.productoId === producto.id);
@@ -338,6 +407,7 @@ export default function ProductosPage() {
           cliente: v.clienteNombre || 'Venta directa',
           costoReal: itemVendido.costoReal || 0,
           utilidad: (itemVendido.cantidad * itemVendido.precioUnitario) - (itemVendido.costoReal || 0),
+          lotes: itemVendido.lotesConsumidos || [], // 🆕 Traceability
           icono: '💰',
           color: '#2563eb',
         });
@@ -345,7 +415,8 @@ export default function ProductosPage() {
     });
     
     // Obtener lotes activos del producto
-    const lotes = getLotes(producto.id).map(l => ({
+    const lotesData = await getLotes(producto.id);
+    const lotes = lotesData.map(l => ({
       tipo: 'lote',
       fecha: l.fecha,
       cantidad: l.cantidadRestante,
@@ -365,8 +436,9 @@ export default function ProductosPage() {
     setMostrarModalHistorial(true);
   };
 
-  const agregarStock = (tipo) => {
-    if (!cantidadStock || parseInt(cantidadStock) <= 0) {
+  const agregarStock = async (tipo) => {
+    const cantidad = parseDecimal(cantidadStock);
+    if (!cantidadStock || cantidad <= 0) {
       showToast('Ingresa una cantidad válida', 'warning');
       return;
     }
@@ -378,13 +450,12 @@ export default function ProductosPage() {
         return;
       }
       
-      const cantidad = parseInt(cantidadStock);
-      const precioC = parseFloat(precioCompra) || 0;
-      const precioV = parseFloat(nuevoPrecioVenta) || 0;
+      const precioC = parseDecimal(precioCompra);
+      const precioV = parseDecimal(nuevoPrecioVenta);
       const proveedor = proveedores.find(p => p.id === parseInt(proveedorId));
 
-      // 1. Registrar Compra
-      addCompra({
+      // 1. Registrar Compra (genera gasto/deuda y actualiza stock/precios automáticamente)
+      await addCompra({
         productoId: productoStock.id,
         productoNombre: productoStock.nombre,
         proveedorId: parseInt(proveedorId),
@@ -393,20 +464,15 @@ export default function ProductosPage() {
         unidad: productoStock.unidad || 'KG',
         precioCompra: precioC,
         precioVenta: precioV,
-        adjuntoURL: adjuntoCompra, // 🆕 Comprobante adjunto
+        adjuntoURL: adjuntoCompra,
+        tipoCompra: tipoCompra, // 🆕 Enviar tipo de compra
       });
-
-      // 2. Actualizar Precios si cambiaron
-      if (precioC !== productoStock.precioCompra || precioV !== productoStock.precioVenta) {
-        updateProducto(productoStock.id, {
-          precioCompra: precioC,
-          precioVenta: precioV
-        });
-      }
+    } else {
+      // Ajuste manual de stock sin compra
+      await actualizarStock(productoStock.id, cantidad, tipo);
     }
-
-    actualizarStock(productoStock.id, parseInt(cantidadStock), tipo);
-    setProductos(getProductos());
+    setProductos(await getProductos());
+    if (tipo === 'agregar' && esCompra) setProveedores(await getProveedores());
     setMostrarModalStock(false);
     showToast(`Stock ${tipo === 'agregar' ? 'agregado' : 'restado'} correctamente`, 'success');
   };
@@ -462,6 +528,13 @@ export default function ProductosPage() {
                 ☰
               </button>
             </div>
+            <button 
+              className={styles.btnSecondary}
+              onClick={() => setMostrarModalMerma(true)}
+              style={{ marginRight: '10px', backgroundColor: '#fed7d7', color: '#c53030', borderColor: '#feb2b2' }}
+            >
+              🗑️ Registrar Merma
+            </button>
             <button 
               className={styles.addButton}
               onClick={() => {
@@ -594,7 +667,7 @@ export default function ProductosPage() {
                     <span className={styles.productEmoji}>{getCategoriaIcon(producto.categoria)}</span>
                   )}
                   <span className={`${styles.stockBadge} ${styles[getStockStatus(producto)]}`}>
-                    {producto.stock} {producto.unidad}
+                    {formatearStock(producto.stock)} {producto.unidad}
                   </span>
                 </div>
                 <div className={styles.productInfo}>
@@ -626,9 +699,9 @@ export default function ProductosPage() {
 
                   <div className={styles.stockBar}>
                     <div className={styles.stockBarLabel}>
-                      <span>Stock: {producto.stock} / Min: {producto.stockMinimo}</span>
-                      {producto.stock <= producto.stockMinimo && <span className={styles.stockWarning}>⚠️ Bajo</span>}
-                    </div>
+                    <span>Stock: {formatearStock(producto.stock)} / Min: {formatearStock(producto.stockMinimo)}</span>
+                    {producto.stock <= producto.stockMinimo && <span className={styles.stockWarning}>⚠️ Bajo</span>}
+                  </div>
                     <div className={styles.stockBarTrack}>
                       <div 
                         className={`${styles.stockBarFill} ${styles[getStockStatus(producto)]}`}
@@ -637,35 +710,27 @@ export default function ProductosPage() {
                     </div>
                   </div>
 
-                  <div className={styles.productActions}>
+                  <div className={styles.cardActionsColumn}>
                     <button 
-                      className={styles.btnAction} 
+                      className={styles.btnActionFull} 
+                      title="Agregar Stock"
+                      onClick={() => abrirModalStock(producto)}
+                    >
+                      📥 Agregar Stock
+                    </button>
+                    <button 
+                      className={styles.btnActionFull} 
                       title="Editar"
                       onClick={() => editarProducto(producto)}
                     >
-                      ✏️
+                      ✏️ Editar
                     </button>
                     <button 
-                      className={styles.btnAction} 
-                      title="Agregar stock"
-                      onClick={() => abrirModalStock(producto)}
-                    >
-                      📥
-                    </button>
-                    <button 
-                      className={styles.btnAction} 
-                      title="Ver historial"
-                      onClick={() => abrirHistorial(producto)}
-                      style={{ background: '#ede9fe', color: '#7c3aed' }}
-                    >
-                      📊
-                    </button>
-                    <button 
-                      className={styles.btnAction} 
+                      className={`${styles.btnActionFull} ${styles.btnDeleteFull}`} 
                       title="Eliminar"
                       onClick={() => iniciarEliminacion(producto)}
                     >
-                      🗑️
+                      🗑️ Eliminar
                     </button>
                   </div>
                 </div>
@@ -732,7 +797,7 @@ export default function ProductosPage() {
                       <td><span className={styles.margenBadge}>+{calcularMargen(producto.precioCompra, producto.precioVenta)}%</span></td>
                       <td>
                         <span className={`${styles.stockValue} ${styles[getStockStatus(producto)]}`}>
-                          {producto.stock} {producto.unidad}
+                          {formatearStock(producto.stock)} {producto.unidad}
                         </span>
                       </td>
                       <td>
@@ -745,25 +810,25 @@ export default function ProductosPage() {
                       <td>
                         <div className={styles.acciones}>
                           <button 
-                            className={styles.btnAccion} 
+                            className={styles.btnActionWithText} 
                             title="Editar"
                             onClick={() => editarProducto(producto)}
                           >
-                            ✏️
+                            ✏️ Editar
                           </button>
                           <button 
-                            className={styles.btnAccion} 
+                            className={styles.btnActionWithText} 
                             title="Agregar stock"
                             onClick={() => abrirModalStock(producto)}
                           >
-                            📥
+                            📥 Agregar
                           </button>
                           <button 
-                            className={styles.btnAccion} 
+                            className={`${styles.btnActionWithText} ${styles.btnDeleteWithText}`} 
                             title="Eliminar"
                             onClick={() => iniciarEliminacion(producto)}
                           >
-                            🗑️
+                            🗑️ Eliminar
                           </button>
                         </div>
                       </td>
@@ -825,6 +890,11 @@ export default function ProductosPage() {
                           />
                         </label>
                       </div>
+                    )}
+                    {subiendoImagenProducto && (
+                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+                            <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#3b82f6' }}>⏳ Subiendo imagen...</span>
+                        </div>
                     )}
                   </div>
                 </div>
@@ -929,22 +999,19 @@ export default function ProductosPage() {
                     </div>
                     <div className={styles.formGroup}>
                       <label>Estado del Producto *</label>
-                      <input 
-                        type="text"
+                      <select 
                         name="estado"
                         value={formData.estado}
                         onChange={handleInputChange}
-                        placeholder="Seleccionar o escribir..."
-                        list="estados-list"
-                        className={styles.inputWithList}
+                        className={styles.selectInput}
                         required
-                      />
-                      <datalist id="estados-list">
-                        <option value="Fresco" />
-                        <option value="Congelado" />
-                        <option value="Marinado" />
-                        <option value="Cocido" />
-                      </datalist>
+                      >
+                        <option value="">Seleccionar...</option>
+                        <option value="Fresco">Fresco</option>
+                        <option value="Congelado">Congelado</option>
+                        <option value="Marinado">Marinado</option>
+                        <option value="Cocido">Cocido</option>
+                      </select>
                     </div>
                     <div className={styles.formGroup}>
                       <label>Descripción</label>
@@ -997,23 +1064,25 @@ export default function ProductosPage() {
                   <h4>📊 Inventario</h4>
                   <div className={styles.formGrid}>
                     <div className={styles.formGroup}>
-                      <label>Stock Inicial</label>
+                      <label>Inventario (kilos y gramos totales del producto)</label>
                       <input 
-                        type="number" 
+                        type="text" 
+                        inputMode="decimal"
                         name="stock"
                         value={formData.stock}
                         onChange={handleInputChange}
-                        placeholder="0" 
+                        placeholder="0.000" 
                       />
                     </div>
                     <div className={styles.formGroup}>
                       <label>Stock Mínimo (para alertas)</label>
                       <input 
-                        type="number" 
+                        type="text" 
+                        inputMode="decimal"
                         name="stockMinimo"
                         value={formData.stockMinimo}
                         onChange={handleInputChange}
-                        placeholder="10" 
+                        placeholder="10.000" 
                       />
                     </div>
                   </div>
@@ -1027,9 +1096,10 @@ export default function ProductosPage() {
               <button 
                 className={styles.btnPrimary}
                 onClick={handleSubmit}
-                disabled={guardando}
+                disabled={guardando || subiendoImagenProducto}
+                style={{ opacity: (guardando || subiendoImagenProducto) ? 0.7 : 1 }}
               >
-                {guardando ? '⏳ Guardando...' : '💾 Guardar Producto'}
+                {guardando ? '⏳ Guardando...' : subiendoImagenProducto ? '⏳ Subiendo imagen...' : '💾 Guardar Producto'}
               </button>
             </div>
           </div>
@@ -1050,15 +1120,20 @@ export default function ProductosPage() {
               <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                 <span style={{ fontSize: '3rem' }}>{getCategoriaIcon(productoStock.categoria)}</span>
                 <h3 style={{ margin: '10px 0' }}>{productoStock.nombre}</h3>
-                <p style={{ color: '#666' }}>Stock actual: <strong>{productoStock.stock} {productoStock.unidad}</strong></p>
+                <p style={{ color: '#666' }}>Stock actual: <strong>{formatearStock(productoStock.stock)} {productoStock.unidad}</strong></p>
               </div>
               
               <div className={styles.formGroup}>
                 <label>Cantidad a ajustar</label>
                 <input 
-                  type="number" 
+                  type="text" 
+                  inputMode="decimal"
                   value={cantidadStock}
-                  onChange={(e) => setCantidadStock(e.target.value)}
+                  onChange={(e) => {
+                    if (/^[0-9.,]*$/.test(e.target.value)) {
+                      setCantidadStock(e.target.value);
+                    }
+                  }}
                   placeholder="Ingresa la cantidad"
                   style={{ textAlign: 'center', fontSize: '1.2rem' }}
                 />
@@ -1108,64 +1183,63 @@ export default function ProductosPage() {
                          placeholder="0.00"
                        />
                     </div>
+
+                    {/* 🆕 Selector de Tipo de Compra (Contado/Crédito) */}
+                    {proveedorId && proveedores.find(p => p.id === parseInt(proveedorId))?.ofreceCredito ? (
+                      <div className={styles.formGroup} style={{ gridColumn: '1 / -1', marginTop: '-10px', marginBottom: '10px' }}>
+                        <label>Método de Pago</label>
+                        <div style={{ display: 'flex', gap: '20px' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                            <input 
+                              type="radio" 
+                              name="tipoCompra" 
+                              value="contado"
+                              checked={tipoCompra === 'contado'}
+                              onChange={() => setTipoCompra('contado')}
+                            />
+                            💵 Contado
+                          </label>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                            <input 
+                              type="radio" 
+                              name="tipoCompra" 
+                              value="credito"
+                              checked={tipoCompra === 'credito'}
+                              onChange={() => setTipoCompra('credito')}
+                            />
+                            💳 Crédito ({proveedores.find(p => p.id === parseInt(proveedorId))?.diasCredito} días)
+                          </label>
+                        </div>
+                      </div>
+                    ) : null}
                     
                     {/* 🆕 Adjuntar Comprobante */}
                     <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
                       <label>📎 Adjuntar Comprobante (Foto/Factura)</label>
-                      <div style={{ 
-                        display: 'flex', 
-                        gap: '10px', 
-                        alignItems: 'center',
-                        marginTop: '8px' 
-                      }}>
-                        <input 
-                          type="file" 
-                          accept="image/*,application/pdf"
-                          capture="environment"
-                          onChange={(e) => {
-                            const file = e.target.files[0];
-                            if (file) {
-                              if (file.size > 5 * 1024 * 1024) {
-                                showToast('⚠️ Archivo muy grande (máx 5MB)', 'warning');
-                                return;
-                              }
-                              const reader = new FileReader();
-                              reader.onload = (ev) => setAdjuntoCompra(ev.target.result);
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                          style={{ flex: 1 }}
+                      <div style={{ marginTop: '8px' }}>
+                        <ImageDropzone 
+                          onImageSave={(base64) => setAdjuntoCompra(base64)}
+                          previewUrl={adjuntoCompra && adjuntoCompra.startsWith('data:image') ? adjuntoCompra : null}
+                          onRemove={() => setAdjuntoCompra(null)}
+                          label="Arrastra un comprobante aquí o haz clic para seleccionar"
                         />
-                        {adjuntoCompra && (
-                          <button 
-                            type="button"
-                            onClick={() => setAdjuntoCompra(null)}
-                            style={{ 
-                              background: '#fee2e2', 
-                              color: '#dc2626', 
-                              border: 'none', 
-                              padding: '6px 12px', 
-                              borderRadius: '6px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            ✕ Quitar
-                          </button>
+                        {/* Mensaje visual para PDF */}
+                        {adjuntoCompra && !adjuntoCompra.startsWith('data:image') && (
+                          <div style={{ marginTop: '10px', textAlign: 'center', background: '#ecfdf5', padding: '10px', borderRadius: '8px', position: 'relative' }}>
+                             <span style={{ color: '#059669', fontSize: '0.9rem' }}>📄 Archivo adjunto guardado</span>
+                             <button
+                               type="button"
+                               onClick={() => setAdjuntoCompra(null)}
+                               style={{
+                                 position: 'absolute', top: '-8px', right: '-8px',
+                                 background: '#ef4444', color: 'white', border: 'none',
+                                 borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer',
+                                 display: 'flex', alignItems: 'center', justifyContent: 'center'
+                               }}
+                             >✕</button>
+                          </div>
                         )}
                       </div>
-                      {adjuntoCompra && (
-                        <div style={{ marginTop: '10px', textAlign: 'center' }}>
-                          {adjuntoCompra.startsWith('data:image') ? (
-                            <img 
-                              src={adjuntoCompra} 
-                              alt="Vista previa" 
-                              style={{ maxWidth: '150px', maxHeight: '100px', borderRadius: '8px', border: '1px solid #ddd' }}
-                            />
-                          ) : (
-                            <span style={{ color: '#059669', fontSize: '0.9rem' }}>📄 PDF adjunto</span>
-                          )}
-                        </div>
-                      )}
                     </div>
                   </div>
                 )}
@@ -1185,9 +1259,10 @@ export default function ProductosPage() {
               <button 
                 className={styles.btnPrimary}
                 onClick={() => agregarStock('agregar')}
-                disabled={!cantidadStock || (esCompra && !proveedorId)}
+                disabled={!cantidadStock || (esCompra && !proveedorId) || subiendoAdjuntoCompra}
+                style={{ opacity: (!cantidadStock || (esCompra && !proveedorId) || subiendoAdjuntoCompra) ? 0.7 : 1 }}
               >
-                {esCompra ? '🛒 Registrar Compra' : '➕ Agregar / Ajuste'}
+                {subiendoAdjuntoCompra ? '⏳ Subiendo...' : esCompra ? '🛒 Registrar Compra' : '➕ Agregar / Ajuste'}
               </button>
             </div>
           </div>
@@ -1256,7 +1331,7 @@ export default function ProductosPage() {
               <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                 <span style={{ fontSize: '2.5rem' }}>{getCategoriaIcon(productoHistorial.categoria)}</span>
                 <h3 style={{ margin: '10px 0' }}>{productoHistorial.nombre}</h3>
-                <p style={{ color: '#666' }}>Stock actual: <strong>{productoHistorial.stock} {productoHistorial.unidad}</strong></p>
+                <p style={{ color: '#666' }}>Stock actual: <strong>{formatearStock(productoHistorial.stock)} {productoHistorial.unidad}</strong></p>
               </div>
 
               {/* Lotes Activos */}
@@ -1282,7 +1357,7 @@ export default function ProductosPage() {
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <span style={{ fontWeight: '600', color: '#7c3aed' }}>
-                            {lote.cantidad}/{lote.cantidadOriginal} {productoHistorial.unidad}
+                            {formatearStock(lote.cantidad)}/{formatearStock(lote.cantidadOriginal)} {productoHistorial.unidad}
                           </span>
                           <span style={{ color: '#666', marginLeft: '10px', fontSize: '0.85rem' }}>
                             @ {formatearMoneda(lote.precio)}
@@ -1320,7 +1395,7 @@ export default function ProductosPage() {
                             borderRadius: '12px', 
                             fontSize: '0.75rem' 
                           }}>
-                            {mov.tipo === 'compra' ? '+' : '-'}{mov.cantidad} {productoHistorial.unidad}
+                            {mov.tipo === 'compra' ? '+' : '-'}{formatearStock(mov.cantidad)} {productoHistorial.unidad}
                           </span>
                         </div>
                         <p style={{ color: '#666', fontSize: '0.85rem', marginTop: '4px' }}>
@@ -1328,9 +1403,21 @@ export default function ProductosPage() {
                         </p>
                         <p style={{ color: '#999', fontSize: '0.75rem', marginTop: '2px' }}>
                           {new Date(mov.fecha).toLocaleDateString('es-MX', { 
-                            day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' 
                           })}
                         </p>
+                        
+                        {/* 🆕 Trazabilidad: Mostrar lotes usados en ventas */}
+                        {mov.lotes && mov.lotes.length > 0 && (
+                          <div style={{ marginTop: '8px', padding: '6px', background: '#f8fafc', borderRadius: '6px', fontSize: '0.8rem', border: '1px solid #e2e8f0' }}>
+                             <strong style={{ display: 'block', marginBottom: '4px', color: '#64748b' }}>🔍 Trazabilidad (Origen):</strong>
+                             {mov.lotes.map((l, lid) => (
+                               <div key={lid} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                 <span>• {l.cantidad}u del Lote #{l.loteId} ({new Date(l.fechaIngreso).toLocaleDateString()})</span>
+                                 <span style={{ color: '#64748b' }}>Costo: {formatearMoneda(l.costoUnitario)}</span>
+                               </div>
+                             ))}
+                          </div>
+                        )}
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <span style={{ fontWeight: '600', color: mov.color }}>
@@ -1373,6 +1460,98 @@ export default function ProductosPage() {
           </div>
         </div>
       )}
+      {/* Modal Registrar Merma */}
+      {mostrarModalMerma && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
+              <h2>Registrar Merma</h2>
+              <button 
+                className={styles.closeButton}
+                onClick={() => setMostrarModalMerma(false)}
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleRegistrarMerma} className={styles.form}>
+              <div className={styles.formGroup}>
+                <label>Producto</label>
+                <select 
+                  className={styles.input}
+                  value={productoMerma || ''} 
+                  onChange={e => setProductoMerma(e.target.value)}
+                  required
+                >
+                  <option value="">Seleccionar Producto...</option>
+                  {productos.map(p => (
+                    <option key={p.id} value={p.id}>{p.nombre} (Stock: {formatearStock(p.stock)} {p.unidad})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Cantidad (KG/U)</label>
+                <input 
+                  type="text" 
+                  inputMode="decimal"
+                  className={styles.input}
+                  value={cantidadMerma}
+                  onChange={e => {
+                    if (/^[0-9.,]*$/.test(e.target.value)) {
+                      setCantidadMerma(e.target.value);
+                    }
+                  }}
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Motivo</label>
+                <select 
+                  className={styles.input}
+                  value={motivoMerma}
+                  onChange={e => setMotivoMerma(e.target.value)}
+                >
+                  <option value="caducidad">Caducidad</option>
+                  <option value="calidad">Mala Calidad</option>
+                  <option value="robo">Robo / Pérdida</option>
+                  <option value="recorte">Recorte / Grasa</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Nota / Observación</label>
+                <textarea 
+                  className={styles.input}
+                  value={notaMerma}
+                  onChange={e => setNotaMerma(e.target.value)}
+                  rows="3"
+                />
+              </div>
+
+              <div className={styles.formActions}>
+                <button 
+                  type="button" 
+                  className={styles.btnSecondary}
+                  onClick={() => setMostrarModalMerma(false)}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  className={styles.btnPrimary}
+                  style={{ backgroundColor: '#e53e3e' }}
+                >
+                  Confirmar Pérdida
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </main>
     </>
   );

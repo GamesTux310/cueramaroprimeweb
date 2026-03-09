@@ -30,8 +30,8 @@ export default function NotasPage() {
     cargarNotas();
   }, []);
 
-  const cargarNotas = () => {
-    setNotas(getNotas());
+  const cargarNotas = async () => {
+    setNotas(await getNotas());
   };
 
   const abrirModal = (nota = null) => {
@@ -58,24 +58,24 @@ export default function NotasPage() {
     setNotaEnEdicion(null);
   };
 
-  const guardarNota = (e) => {
+  const guardarNota = async (e) => {
     e.preventDefault();
     
     if (notaEnEdicion) {
-      updateNota(notaEnEdicion.id, formData);
+      await updateNota(notaEnEdicion.id, formData);
     } else {
-      addNota(formData);
+      await addNota(formData);
     }
     
-    cargarNotas();
+    await cargarNotas();
     cerrarModal();
   };
 
-  const eliminarNota = (id, e) => {
+  const eliminarNota = async (id, e) => {
     e.stopPropagation();
     if (confirm('¿Estás seguro de eliminar esta nota?')) {
-      deleteNota(id);
-      cargarNotas();
+      await deleteNota(id);
+      await cargarNotas();
     }
   };
 

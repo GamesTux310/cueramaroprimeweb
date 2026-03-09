@@ -1,7 +1,7 @@
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
 import SplashScreen from "@/components/SplashScreen";
-import SyncStatus from "@/components/SyncStatus";
+import MobileHeader from "@/components/MobileHeader";
 
 export const metadata = {
   title: "Cueramaro Prime - Sistema de Gestión",
@@ -14,14 +14,14 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="es">
-      <body>
+    <html lang="es" suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <SplashScreen />
+        <MobileHeader />
         <div className="app-container">
           <Sidebar />
           {children}
         </div>
-        <SyncStatus />
       </body>
     </html>
   );

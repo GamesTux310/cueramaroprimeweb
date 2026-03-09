@@ -1,22 +1,31 @@
 /* FacturaTemplate.module.css - Estilos idénticos a la plantilla "Nota Crédito" */
 
+@page {
+  size: letter;
+  margin: 0; /* Controlamos márgenes desde el contenedor */
+}
+
 /* Contenedor principal - Tamaño carta exacto para PDF */
 .facturaContainer {
-  width: 720px; /* Ancho reducido para caber en carta */
-  min-height: 980px; /* Altura mínima */
+  width: 200mm; /* Ancho más angosto para visualización correcta (menos estirado) */
+  min-height: 279.4mm; /* Alto Carta */
   background: white;
   font-family: 'Arial', 'Helvetica', sans-serif;
-  font-size: 10px;
+  font-size: 12px;
   color: #333;
-  padding: 20px 25px;
+  padding: 4mm; /* Márgenes mínimos para maximizar ancho */
   box-sizing: border-box;
   margin: 0 auto;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  transform-origin: top center;
+  text-transform: uppercase;
 }
 
 .paraImpresion {
   box-shadow: none;
-  margin: 0;
+  margin: 0 auto;
+  width: 100%; /* Asegurar que no rebase su contenedor */
+  max-width: 200mm; /* Limitar el ancho máximo a un ancho menor que carta */
 }
 
 /* ========== ENCABEZADO ========== */
@@ -24,21 +33,21 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 10px;
-  gap: 15px;
+  margin-bottom: 2px; /* Reducido de 5px */
+  gap: 5px; /* Reducido de 10px */
   flex-shrink: 0;
 }
 
 .empresaInfo {
   display: flex;
   align-items: flex-start;
-  gap: 15px;
+  gap: 5px;
   flex: 1;
 }
 
 .logoContainer {
-  width: 80px;
-  height: 80px;
+  width: 140px; /* Aumentado ligeramente de 130px */
+  height: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -46,8 +55,8 @@
 }
 
 .logo {
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
 }
 
@@ -56,7 +65,7 @@
 }
 
 .empresaNombre {
-  font-size: 16px;
+  font-size: 32px; /* Aumentado de 28px */
   font-weight: bold;
   color: #333;
   margin: 0 0 3px 0;
@@ -65,8 +74,8 @@
 .empresaDireccion,
 .empresaColonia,
 .empresaCP {
-  margin: 2px 0;
-  font-size: 11px;
+  margin: 1px 0;
+  font-size: 13px; /* Aumentado de 12px */
   color: #555;
 }
 
@@ -93,7 +102,7 @@
 .infoRow {
   display: flex;
   justify-content: space-between;
-  padding: 3px 0;
+  padding: 1px 0;
   border-bottom: 1px solid #d0e8f8;
 }
 
@@ -103,20 +112,25 @@
 
 .infoLabel {
   font-weight: bold;
-  font-size: 9px;
+  font-size: 11px; /* 9px -> 11px */
   color: #333;
 }
 
 .infoValue {
-  font-size: 9px;
+  font-size: 11px; /* 9px -> 11px */
   color: #333;
   text-align: right;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 60%;
 }
+
+
 
 /* ========== DATOS DEL CLIENTE ========== */
 .clienteSection {
   display: flex;
-  margin-bottom: 10px;
+  margin-bottom: 2px; /* Reducido de 5px */
   border: 1px solid #ccc;
 }
 
@@ -137,13 +151,13 @@
 
 .clienteGrid {
   flex: 1;
-  padding: 8px;
+  padding: 2px 4px;
   background-color: #E8F4FD;
 }
 
 .clienteRow {
   display: flex;
-  padding: 3px 0;
+  padding: 1px 0; /* +padding */
   border-bottom: 1px solid #d0e8f8;
 }
 
@@ -152,30 +166,32 @@
 }
 
 .clienteLabel {
-  width: 80px;
+  width: 90px;
   font-weight: bold;
-  font-size: 9px;
+  font-size: 11px; /* 9px -> 11px */
   color: #333;
 }
 
 .clienteValue {
   flex: 1;
-  font-size: 9px;
+  font-size: 11px; /* 9px -> 11px */
   color: #333;
   border-bottom: 1px solid #999;
-  min-height: 14px;
+  min-height: 16px;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .vendedorInfo {
   width: 180px;
-  padding: 8px;
+  padding: 2px 4px;
   background-color: #E8F4FD;
   border-left: 1px solid #ccc;
 }
 
 .vendedorRow {
   display: flex;
-  padding: 3px 0;
+  padding: 1px 0;
   border-bottom: 1px solid #d0e8f8;
 }
 
@@ -198,7 +214,7 @@
 
 /* ========== TABLA DE PRODUCTOS ========== */
 .productosSection {
-  margin-bottom: 8px;
+  margin-bottom: 2px;
 }
 
 .productosTable {
@@ -213,25 +229,25 @@
 }
 
 .productosTable th {
-  padding: 5px 4px;
+  padding: 2px 2px;
   font-weight: bold;
   text-align: center;
   border: 1px solid #5a9bc9;
-  font-size: 9px;
+  font-size: 10px; /* 9px -> 11px */
 }
 
-.thCantidad { width: 70px; }
-.thCodigo { width: 80px; }
-.thUM { width: 50px; }
+.thCantidad { width: 80px; }
+.thCodigo { width: 90px; }
+.thUM { width: 60px; }
 .thDescripcion { width: auto; }
-.thPrecio { width: 80px; }
-.thImporte { width: 80px; }
+.thPrecio { width: 90px; }
+.thImporte { width: 90px; }
 
 .productosTable td {
-  padding: 4px 4px;
+  padding: 2px 2px;
   border: 1px solid #ccc;
-  min-height: 16px;
-  font-size: 9px;
+  height: 16px;
+  font-size: 10px; /* 9px -> 11px */
 }
 
 .tdCentro { text-align: center; }
@@ -247,39 +263,58 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 8px;
+  margin-bottom: 2px;
   flex-shrink: 0;
 }
 
 .importeLetra {
   flex: 1;
   padding-right: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
 }
 
-.importeLetraLabel {
+.importeLetra .qrContainer {
+  width: 100px; /* Ancho fijo */
+  height: 100px; /* Alto fijo igual al ancho */
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.importeLetra .qrCode {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Mantiene proporción original, evitando estiramiento */
+}
+
+.importeLabel {
   font-weight: bold;
   font-size: 10px;
-  margin-bottom: 5px;
+  display: block;
+  margin-bottom: 3px;
 }
 
 .importeLetraTexto {
   display: flex;
-  gap: 10px;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
 }
 
 .conLetra {
   font-weight: bold;
-  font-size: 9px;
+  font-size: 11px; /* 9px -> 11px */
   white-space: nowrap;
 }
 
 .letraValor {
-  font-size: 9px;
+  font-size: 11px; /* 9px -> 11px */
   color: #333;
   border-bottom: 1px solid #999;
-  flex: 1;
-  min-height: 14px;
+  min-height: 16px;
 }
 
 .totalesBox {
@@ -290,58 +325,84 @@
 .totalRow {
   display: flex;
   justify-content: space-between;
-  padding: 6px 10px;
+  padding: 3px 6px;
   border-bottom: 1px solid #ccc;
   background-color: #E8F4FD;
 }
 
 .totalRow:last-child {
   border-bottom: none;
-  background-color: #7DB3DD;
+}
+
+.totalRow.buenoFor {
+  background-color: #F7941D;
   color: white;
   font-weight: bold;
 }
 
 .totalLabel {
-  font-size: 10px;
+  font-size: 11px; /* 10px -> 11px */
   font-weight: bold;
 }
 
 .totalValue {
-  font-size: 10px;
+  font-size: 11px; /* 10px -> 11px */
 }
 
 /* ========== SECCIÓN PAGARÉ ========== */
 .pagareSection {
-  display: flex;
-  gap: 15px;
-  border: 2px solid #333;
-  padding: 12px;
-  margin-top: 15px;
+  border: 1px solid #ccc; /* "Quita el contorno negro" --> Borde sutil grid */
+  padding: 4px;
+  margin-top: 0px; /* Reducido de 15px */
   background-color: #fafafa;
 }
 
-.qrContainer {
-  width: 100px;
-  height: 100px;
-  flex-shrink: 0;
-}
-
-.qrCode {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
 .pagareContent {
-  flex: 1;
+  width: 100%;
+}
+
+.pagareHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 2px;
+}
+
+.pagareTituloBox {
+  flex: 1; /* Ocupa el espacio central */
+  text-align: center;
 }
 
 .pagareTitulo {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
-  margin: 0 0 10px 0;
+  margin: 0;
   color: #333;
+}
+
+.buenoPorBox {
+  border: 1px solid #333; /* Recuadro estilo celda Excel */
+  display: flex;
+  align-items: center;
+  background-color: #eee;
+}
+
+.buenoPorLabel {
+  font-weight: bold;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-right: 1px solid #333;
+}
+
+.buenoPorValue {
+  font-weight: bold;
+  font-size: 11px; /* 10px -> 11px */
+  padding: 2px 4px;
+  min-width: 80px;
+  text-align: right;
+  background-color: white;
 }
 
 .pagareTexto {
@@ -350,73 +411,96 @@
   color: #333;
 }
 
-.pagareTextoLegal {
-  font-size: 9px;
-  margin: 0 0 15px 0;
-  color: #555;
-  line-height: 1.4;
+.firmaDatos {
+  margin-top: 20px;
+  border-top: 2px solid #333;
+  padding-top: 10px;
+  margin-bottom: 40px; /* Más espacio antes de la sección de firma */
 }
 
-.buenoPor {
+.firmaRow {
   display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
+  width: 100%;
+  border-bottom: 1px solid #ccc;
+  padding: 4px 0;
+  font-size: 10px;
 }
 
-.buenoPorLabel {
+.firmaLabel {
   font-weight: bold;
-  font-size: 11px;
+  width: 80px;
 }
 
-.buenoPorValue {
-  font-size: 14px;
-  font-weight: bold;
-  color: #333;
-  border: 1px solid #333;
-  padding: 5px 15px;
-  min-width: 100px;
-  text-align: right;
+.firmaValue {
+  flex: 1;
 }
 
 .firmaSection {
   text-align: center;
-  margin-top: 15px;
+  margin-top: 30px; /* Reducido drásticamente de 80px */
+  padding-top: 10px;
 }
 
 .firmaLinea {
-  width: 200px;
+  width: 250px;
   border-bottom: 1px solid #333;
-  margin: 0 auto 5px auto;
+  margin: 0 auto 8px auto;
 }
 
 .firmaTexto {
-  font-size: 9px;
-  color: #555;
+  font-size: 10px;
+  font-weight: bold;
+  color: #333;
   margin: 0;
+}
+
+.aceptoTexto {
+  font-size: 8px;
+  color: #555;
+  margin: 5px 0 0 0;
+}
+
+.suscribeTexto {
+  font-size: 9px;
+  color: #333;
+  margin-top: 20px;
+  text-align: center;
 }
 
 /* ========== MENSAJE LEGAL SAT ========== */
 .mensajeLegal {
   text-align: center;
-  font-size: 8px;
+  font-size: 9px;
   color: #666;
-  padding: 8px 10px;
+  padding: 10px 15px;
   margin-top: 10px;
   background-color: #f9f9f9;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-style: italic;
+  width: 100%;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  line-height: 1.4;
 }
 
 /* ========== ESTILOS DE IMPRESIÓN ========== */
 @media print {
-  .facturaContainer {
-    width: 100%;
-    box-shadow: none;
-    padding: 0;
+  body {
     margin: 0;
+    padding: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .facturaContainer {
+    width: 200mm; /* Forzar el ancho un poco más estrecho para evitar que se vea alargado */
+    max-width: 200mm;
+    min-height: 279.4mm;
+    box-shadow: none;
+    padding: 10mm; /* Reducir padding en impresión para aprovechar ancho */
+    margin: 0 auto;
+    border: none;
   }
   
   .productosTable,

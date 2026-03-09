@@ -14,11 +14,14 @@ export default function ReportesPage() {
   const [periodo, setPeriodo] = useState('hoy');
 
   useEffect(() => {
-    setVentas(getVentas());
-    setGastos(getGastos());
-    setAbonos(getAbonos());
-    setClientes(getClientes());
-    setProductos(getProductos());
+    const cargarDatos = async () => {
+      setVentas(await getVentas());
+      setGastos(await getGastos());
+      setAbonos(await getAbonos());
+      setClientes(await getClientes());
+      setProductos(await getProductos());
+    };
+    cargarDatos();
   }, []);
 
   // Filtrar por periodo
@@ -75,6 +78,31 @@ export default function ReportesPage() {
   });
   const topProductos = Object.values(productosVendidos)
     .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
+
+  // Top Clientes por Utilidad (Rentabilidad)
+  const clientesRentabilidad = {};
+  ventasFiltradas.forEach(venta => {
+    // Usar nombre de cliente o predeterminado
+    const clienteKey = venta.clienteNombre || 'Cliente Público';
+    
+    if (!clientesRentabilidad[clienteKey]) {
+      clientesRentabilidad[clienteKey] = {
+        nombre: clienteKey,
+        totalCompras: 0,
+        totalUtilidad: 0,
+        count: 0
+      };
+    }
+    clientesRentabilidad[clienteKey].totalCompras += venta.total;
+    // Usar utilidadReal (PEPS) o fallback a cálculo simple
+    const utilidad = venta.utilidadReal !== undefined ? venta.utilidadReal : (venta.total * 0.2); 
+    clientesRentabilidad[clienteKey].totalUtilidad += utilidad;
+    clientesRentabilidad[clienteKey].count += 1;
+  });
+
+  const topClientes = Object.values(clientesRentabilidad)
+    .sort((a, b) => b.totalUtilidad - a.totalUtilidad)
     .slice(0, 5);
 
   // Gastos por categoría
@@ -259,6 +287,33 @@ export default function ReportesPage() {
                     <span className={styles.topCantidad}>{producto.cantidad} unidades</span>
                   </div>
                   <span className={styles.topMonto}>{formatearMoneda(producto.total)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Top Clientes Rentables */}
+        <section className={styles.reporteCard}>
+          <h3 className={styles.reporteTitulo}>💎 Mejores Clientes (Por Utilidad)</h3>
+          {topClientes.length === 0 ? (
+            <div className={styles.emptyState}>
+              <span>📭</span>
+              <p>No hay datos de rentabilidad</p>
+            </div>
+          ) : (
+            <div className={styles.topProductosList}>
+              {topClientes.map((cliente, index) => (
+                <div key={index} className={styles.topProductoItem}>
+                   <span className={styles.topRank} style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)' }}>#{index + 1}</span>
+                   <div className={styles.topInfo}>
+                     <span className={styles.topNombre}>{cliente.nombre}</span>
+                     <span className={styles.topCantidad}>{cliente.count} compras | Margen: {cliente.totalCompras > 0 ? ((cliente.totalUtilidad / cliente.totalCompras) * 100).toFixed(1) : 0}%</span>
+                   </div>
+                   <div className={styles.metodoStats}>
+                    <span className={styles.topMonto} style={{ color: '#8b5cf6' }}>{formatearMoneda(cliente.totalUtilidad)}</span>
+                    <span className={styles.metodoCount} style={{ textAlign: 'right' }}>Ventas: {formatearMoneda(cliente.totalCompras)}</span>
+                   </div>
                 </div>
               ))}
             </div>

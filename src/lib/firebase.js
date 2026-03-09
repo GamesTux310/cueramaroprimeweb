@@ -24,21 +24,32 @@ let auth;
 
 if (typeof window !== 'undefined') {
   if (!getApps().length) {
-    app = initializeApp(firebaseConfig);
-    
-    // Initialize services
-    db = getFirestore(app);
-    storage = getStorage(app);
-    auth = getAuth(app);
-    
-    // Enable offline persistence for Firestore
-    enableIndexedDbPersistence(db).catch((err) => {
-      if (err.code === 'failed-precondition') {
-        console.warn('Persistence failed: Multiple tabs open');
-      } else if (err.code === 'unimplemented') {
-        console.warn('Persistence not supported by browser');
-      }
-    });
+      if (!firebaseConfig.apiKey) {
+        console.error('🔥 Firebase Config Missing! Check your environment variables.');
+      } else {
+        // Validate Storage Bucket Format
+        if (!firebaseConfig.storageBucket) {
+           console.error('🔥 Firebase Config Warning: Missing storageBucket');
+        } else if (firebaseConfig.storageBucket.startsWith('gs://') || firebaseConfig.storageBucket.startsWith('http')) {
+           console.warn('🔥 Firebase Config Warning: storageBucket should usually be just the domain (e.g. project-id.appspot.com), not a URL/URI.');
+        }
+
+        app = initializeApp(firebaseConfig);
+      
+      // Initialize services
+      db = getFirestore(app);
+      storage = getStorage(app);
+      auth = getAuth(app);
+      
+      // 🔥 Eager Anonymous Auth Removed!
+      // This was directly causing the "auth/network-request-failed" crash on boot without internet.
+      // Now Auth will only be requested when the Sync screen explicitly triggers a manual network sync.
+      
+      // Enable offline persistence for Firestore
+      enableIndexedDbPersistence(db).catch((err) => {
+        // Silenced offline errors to keep logs clean
+      });
+    }
   } else {
     app = getApps()[0];
     db = getFirestore(app);
@@ -49,14 +60,9 @@ if (typeof window !== 'undefined') {
 
 // Negocio ID - unique identifier for this business installation
 export const getNegocioId = () => {
-  if (typeof window === 'undefined') return null;
-  
-  let negocioId = localStorage.getItem('cueramaro_negocio_id');
-  if (!negocioId) {
-    negocioId = crypto.randomUUID();
-    localStorage.setItem('cueramaro_negocio_id', negocioId);
-  }
-  return negocioId;
+  // HARDCODED SINGLE TENANT ID
+  // This simplifies connection for all devices.
+  return 'cueramaro-sucursal-global';
 };
 
 export { app, db, storage, auth };

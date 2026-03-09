@@ -19,16 +19,23 @@ const facturaStyles = `
     background: white;
   }
   
+  @page {
+    size: letter;
+    margin: 0;
+  }
+
   .factura-container {
-    width: 720px;
-    min-height: 980px;
+    width: 200mm;
+    max-width: 200mm;
+    min-height: 279.4mm;
     background: white;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 10px;
     color: #333;
-    padding: 20px 25px;
+    padding: 15mm;
     box-sizing: border-box;
     margin: 0 auto;
+    text-transform: uppercase;
   }
   
   /* Header */
@@ -371,7 +378,8 @@ const facturaStyles = `
   
   .firma-section {
     text-align: center;
-    margin-top: 15px;
+    margin-top: 80px; /* Mucho más espacio para que no se raye el contenido al firmar */
+    padding-top: 30px;
   }
   
   .firma-linea {
@@ -389,22 +397,37 @@ const facturaStyles = `
   /* Mensaje Legal */
   .mensaje-legal {
     text-align: center;
-    font-size: 8px;
+    font-size: 9px;
     color: #666;
-    padding: 8px 10px;
+    padding: 10px 15px;
     margin-top: 10px;
     background-color: #f9f9f9;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-style: italic;
+    width: 100%;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    line-height: 1.4;
   }
   
   @media print {
-    body { margin: 0; padding: 0; }
+    body { 
+      margin: 0; 
+      padding: 0;
+      /* Escalar el contenido para que encaje mejor en la hoja nativa del navegador */
+      width: 100%;
+    }
     .factura-container {
       width: 100%;
-      padding: 15px;
+      max-width: 100%;
+      padding: 5mm; /* Menor margen para que quepa la información de los productos */
       margin: 0;
+      box-shadow: none;
+      border: none;
+      /* Asegurarse de que el render final se adapte en el área imprimible interior de la hoja */
+      transform: scale(0.95);
+      transform-origin: top left;
     }
   }
 `;
@@ -424,51 +447,68 @@ export async function generarFacturaPDF(elementId, nombreArchivo = 'factura') {
     
     console.log('📄 Generando PDF con nombre:', nombreLimpio);
 
+    // Estrategia anti-recorte y centrado perfecto: clonamos el elemento fuera del contenedor con scroll
+    const clone = element.cloneNode(true);
+    clone.style.position = 'absolute';
+    clone.style.top = '0'; 
+    clone.style.left = '0'; 
+    clone.style.margin = '0'; // Eliminamos márgenes externos que causan bordes blancos asimétricos
+    clone.style.width = '215.9mm'; // Forzar el ancho exacto de una hoja tamaño carta
+    clone.style.minHeight = '279.4mm'; // Forzar el alto de una hoja tamaño carta
+    clone.style.zIndex = '-9999'; 
+    clone.style.overflow = 'visible';
+    document.body.appendChild(clone);
+
+    // Esperar a que el navegador aplique los estilos forzados al clon
+    await new Promise(resolve => setTimeout(resolve, 50));
+
     // Configuración de html2canvas para máxima calidad
-    const canvas = await html2canvas(element, {
+    const canvas = await html2canvas(clone, {
       scale: 2,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
       logging: false,
-      width: element.scrollWidth,
-      height: element.scrollHeight,
+      // Instruimos a html2canvas a tomar el tamaño natural exacto del clon renderizado
+      width: clone.offsetWidth,
+      height: clone.offsetHeight
     });
+
+    // Limpiar el clon del DOM
+    document.body.removeChild(clone);
 
     const imgData = canvas.toDataURL('image/png', 1.0);
 
-    // Crear PDF tamaño carta
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'letter',
-      compress: true
-    });
-
+    // Inicializar PDF usando los valores originales nativos (tamaño carta estándar)
+    const pdf = new jsPDF('p', 'mm', 'letter');
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
 
-    // Calcular dimensiones manteniendo proporción
+    // Mapeamos el DOM (que ya trae su propio padding del CSS) directo al PDF
+    // Evitamos inyectarle "- 10" márgenes Javascript duros para no generar bordes enormes de sobra
     const imgRatio = canvas.width / canvas.height;
     const pdfRatio = pdfWidth / pdfHeight;
 
-    let finalWidth, finalHeight, offsetX = 0, offsetY = 0;
+    let finalWidth = pdfWidth;
+    let finalHeight = pdfHeight;
+    let offsetX = 0;
+    let offsetY = 0;
 
-    if (imgRatio > pdfRatio) {
-      finalWidth = pdfWidth - 10; // Margen
-      finalHeight = finalWidth / imgRatio;
-      offsetX = 5;
-      offsetY = 5;
-    } else {
-      finalHeight = pdfHeight - 10;
+    // Si por muchos artículos el contenedor rebasó la carta, escalamos hacia abajo 
+    // para ajustarlo todo en 1 sola hoja PDF, asegurando que no se corte y quede centrado
+    if (imgRatio < pdfRatio) {
+      finalHeight = pdfHeight; 
       finalWidth = finalHeight * imgRatio;
-      offsetX = (pdfWidth - finalWidth) / 2;
-      offsetY = 5;
+      offsetX = (pdfWidth - finalWidth) / 2; // Centrar los pequeños bordes de sobra
+    } else if (imgRatio > pdfRatio) {
+      finalWidth = pdfWidth;
+      finalHeight = finalWidth / imgRatio;
+      offsetY = 0; // Pegarlo arriba (al cabo el CSS ya da aire superior)
     }
 
     pdf.addImage(imgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
     
-    // Usar file-saver para garantizar el nombre correcto del archivo
+    // Restauramos exactamente al método original usado antes de las modificaciones
     const pdfBlob = pdf.output('blob');
     saveAs(pdfBlob, `${nombreLimpio}.pdf`);
 
@@ -512,7 +552,11 @@ export async function imprimirFactura(elementId, nombreArchivo = 'Factura') {
   };
   
   convertirClases(clone);
-  clone.className = 'factura-container';
+  
+  // Asegurar que tenga la clase base
+  if (!clone.classList.contains('factura-container')) {
+    clone.classList.add('factura-container');
+  }
 
   const printWindow = window.open('', '_blank', 'width=800,height=1000');
   printWindow.document.write(`
@@ -520,7 +564,11 @@ export async function imprimirFactura(elementId, nombreArchivo = 'Factura') {
     <html>
       <head>
         <title>${nombreArchivo}</title>
-        <style>${facturaStyles}</style>
+        <style>
+          ${facturaStyles}
+          /* Hack específico para forzar la hoja en el navegador */
+          @page { size: portrait; margin: 5mm; }
+        </style>
       </head>
       <body>
         ${clone.outerHTML}
@@ -537,3 +585,4 @@ export async function imprimirFactura(elementId, nombreArchivo = 'Factura') {
     }, 500);
   };
 }
+;

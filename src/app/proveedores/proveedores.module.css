@@ -85,6 +85,208 @@
   box-shadow: var(--shadow-lg);
 }
 
+.headerActions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.historialButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: white;
+  color: var(--primary-700);
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-md);
+}
+
+.historialButton:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Historial List */
+.historialList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.historialItem {
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  transition: all var(--transition-fast);
+}
+
+.historialItem:hover {
+  background: var(--gray-100);
+}
+
+.historialHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.historialIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.historialFecha {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.historialBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.historialProducto {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.historialProveedor {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.historialFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid var(--gray-200);
+}
+
+.historialCantidad {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  background: var(--gray-100);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+}
+
+.historialActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.historialMonto {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #059669;
+}
+
+.btnEliminarHistorial {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.9rem;
+  opacity: 0.4;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btnEliminarHistorial:hover {
+  background: #fee2e2;
+  opacity: 1;
+}
+
+/* Delete Confirmation */
+.deleteWarning {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  background: #fef2f2;
+  border: 2px solid #fecaca;
+  border-radius: var(--radius-lg);
+  margin-bottom: 24px;
+}
+
+.warningIcon {
+  font-size: 2rem;
+}
+
+.warningContent h3 {
+  margin: 0 0 8px 0;
+  font-size: 1rem;
+  color: #991b1b;
+}
+
+.warningContent p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #7f1d1d;
+}
+
+.deleteDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: white;
+  border-radius: var(--radius-md);
+  margin-top: 12px;
+  font-size: 0.9rem;
+}
+
+.confirmInput {
+  margin-bottom: 20px;
+}
+
+.confirmInput label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.confirmInput input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+}
+
+.confirmInput input:focus {
+  outline: none;
+  border-color: #ef4444;
+}
+
+.btnDanger:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* Estadísticas */
 .statsSection {
   display: grid;
@@ -367,6 +569,8 @@
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
   padding-top: 16px;
   border-top: 1px solid var(--gray-100);
 }
@@ -387,6 +591,90 @@
   transform: scale(1.1);
 }
 
+.btnActionWithText {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--gray-100);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.cardActionsColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gray-100);
+}
+
+.btnActionFull {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 20px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  background: var(--gray-50);
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btnActionFull:hover {
+  background: var(--primary-50);
+  border-color: var(--primary-300);
+  color: var(--primary-700);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.btnActionFull:active {
+  transform: translateY(0);
+}
+
+.btnDeleteFull {
+  color: #ef4444;
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.btnDeleteFull:hover {
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #b91c1c;
+}
+
+.btnActionWithText:hover {
+  background: var(--primary-100);
+  color: var(--primary-700);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.btnDeleteWithText {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.btnDeleteWithText:hover {
+  background: #fecaca;
+  color: #b91c1c;
+}
+
 /* Modal */
 .modalOverlay {
   position: fixed;
@@ -405,11 +693,21 @@
   border-radius: var(--radius-xl);
   width: 100%;
   max-width: 600px;
-  max-height: 90vh;
+  max-height: 90dvh; /* Dynamic viewport height for mobile */
+  height: auto;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-xl);
+  margin: auto; /* Center in flex container */
+}
+
+@media (max-height: 600px) {
+  .modal {
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
 }
 
 .modalHeader {

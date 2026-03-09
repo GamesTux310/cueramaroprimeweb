@@ -5,7 +5,8 @@ import {
   getPendingWritesCount, 
   isOnline, 
   onConnectionChange,
-  getLastSyncTime 
+  getLastSyncTime,
+  setupRealtimeSync
 } from '@/lib/sync';
 
 export default function SyncStatus() {
@@ -13,6 +14,8 @@ export default function SyncStatus() {
   const [pendingCount, setPendingCount] = useState(0);
   const [lastSync, setLastSync] = useState(null);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [isReceiving, setIsReceiving] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     // Initial state
@@ -21,27 +24,57 @@ export default function SyncStatus() {
     setLastSync(getLastSyncTime());
 
     // Listen for connection changes
-    const unsubscribe = onConnectionChange((isOnline) => {
+    const unsubscribeConnection = onConnectionChange((isOnline) => {
       setOnline(isOnline);
     });
 
-    // Poll pending writes
-    const interval = setInterval(() => {
+    // Start Real-time Sync (Listeners)
+    const unsubscribeRealtime = setupRealtimeSync();
+
+    // Listen for sync status changes (uploads)
+    const handleStatusChange = () => {
       setPendingCount(getPendingWritesCount());
-    }, 1000);
+      setLastSync(getLastSyncTime());
+      setHasError(false); // Reset error on new status change
+    };
+
+    window.addEventListener('cueramaro_sync_status_change', handleStatusChange);
+    
+    // Listen for errors
+    const handleError = () => {
+      setHasError(true);
+    };
+    window.addEventListener('cueramaro_sync_error', handleError);
+
+    // Listen for data updates (downloads)
+    const handleDataUpdate = () => {
+      setLastSync(getLastSyncTime());
+      setIsReceiving(true);
+      setTimeout(() => setIsReceiving(false), 2000); // Show "Actualizando" for 2s
+    };
+    
+    window.addEventListener('cueramaro_data_updated', handleDataUpdate);
 
     return () => {
-      unsubscribe();
-      clearInterval(interval);
+      unsubscribeConnection();
+      if (unsubscribeRealtime) unsubscribeRealtime();
+      window.removeEventListener('cueramaro_sync_status_change', handleStatusChange);
+      window.removeEventListener('cueramaro_data_updated', handleDataUpdate);
+      window.removeEventListener('cueramaro_sync_error', handleError);
     };
   }, []);
 
   // Determine status
-  const status = !online 
-    ? 'offline' 
-    : pendingCount > 0 
-      ? 'syncing' 
-      : 'synced';
+  let status = 'synced';
+  if (!online) {
+    status = 'offline';
+  } else if (hasError) {
+    status = 'error';
+  } else if (pendingCount > 0) {
+    status = 'syncing';
+  } else if (isReceiving) {
+    status = 'receiving';
+  }
 
   const statusConfig = {
     offline: {
@@ -49,6 +82,12 @@ export default function SyncStatus() {
       icon: '📴',
       text: 'Sin conexión',
       bg: 'rgba(245, 158, 11, 0.1)',
+    },
+    manual: {
+      color: '#8b5cf6',
+      icon: '⚡',
+      text: 'Sync Manual',
+      bg: 'rgba(139, 92, 246, 0.1)',
     },
     syncing: {
       color: '#3b82f6',
@@ -61,6 +100,18 @@ export default function SyncStatus() {
       icon: '☁️',
       text: 'Sincronizado',
       bg: 'rgba(16, 185, 129, 0.1)',
+    },
+    receiving: {
+      color: '#8b5cf6',
+      icon: '⬇️',
+      text: 'Actualizando...',
+      bg: 'rgba(139, 92, 246, 0.1)',
+    },
+    error: {
+      color: '#ef4444',
+      icon: '⚠️',
+      text: 'Error de Sync',
+      bg: 'rgba(239, 68, 68, 0.1)',
     },
   };
 

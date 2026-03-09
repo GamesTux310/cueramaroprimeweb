@@ -34,7 +34,7 @@ RFC: ${datosFactura.cliente.rfc || 'N/A'}`;
 }
 
 /**
- * Convierte el data URL a buffer para Google Sheets
+ * Convierte el data URL a buffer
  * @param {string} dataURL - Data URL del QR
  * @returns {Buffer} Buffer de la imagen
  */

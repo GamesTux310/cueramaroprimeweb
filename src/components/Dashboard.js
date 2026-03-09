@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { getVentas, getGastos, getClientes, getProductos, getFacturas, getNotas } from '@/lib/storage';
+import { getVentas, getGastos, getClientes, getProductos, getFacturas, getNotas, getProveedores } from '@/lib/storage';
 import { formatearMoneda } from '@/lib/numberToText';
 
 export default function Dashboard() {
@@ -27,42 +27,64 @@ export default function Dashboard() {
         gastosMesCount: 0,
 
         notasTotal: 0, 
+
+        proveedoresTotal: 0,
+        proveedoresActivos: 0,
     });
 
     useEffect(() => {
-        // Cargar datos del storage
-        const ventas = getVentas();
-        const gastos = getGastos();
-        const clientes = getClientes();
-        const productos = getProductos();
-        const facturas = getFacturas();
-        const notas = getNotas();
+        const loadData = async () => {
+            // Cargar datos del storage asíncronamente
+            const ventas = await getVentas();
+            const gastos = await getGastos();
+            const clientes = await getClientes();
+            const productos = await getProductos();
+            const facturas = await getFacturas();
+            const notas = await getNotas();
+            const proveedores = await getProveedores();
 
         const hoy = new Date();
         const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+        
+        // Inicio semana (Lunes)
+        const diaSemana = hoy.getDay() || 7; 
+        const inicioSemana = new Date(hoy);
+        inicioSemana.setDate(hoy.getDate() - diaSemana + 1);
+        inicioSemana.setHours(0,0,0,0);
 
         // Cálculos Ventas
         const ventasHoyList = ventas.filter(v => new Date(v.fecha).toDateString() === hoy.toDateString());
+        const ventasSemanaList = ventas.filter(v => new Date(v.fecha) >= inicioSemana);
         const ventasMesList = ventas.filter(v => new Date(v.fecha) >= inicioMes);
         
         // Cálculos Gastos
         const gastosMesList = gastos.filter(g => new Date(g.fecha) >= inicioMes);
+        const gastosHoyList = gastos.filter(g => new Date(g.fecha).toDateString() === hoy.toDateString());
 
         // Cálculos Clientes
         const totalPorCobrar = clientes.reduce((sum, c) => sum + (c.saldoPendiente || 0), 0);
         const clientesDeudores = clientes.filter(c => c.saldoPendiente > 0).length;
+
+        // Cálculos Proveedores
+        const totalDeudaProveedores = proveedores.reduce((sum, p) => sum + (p.saldoPendiente || 0), 0);
+        const proveedoresConDeuda = proveedores.filter(p => p.saldoPendiente > 0).length;
 
         // Cálculos Stock
         const productosBajoStock = productos.filter(p => p.stock <= p.stockMinimo).length;
 
         setStats({
             ventasHoy: ventasHoyList.reduce((sum, v) => sum + v.total, 0),
+            ventasSemana: ventasSemanaList.reduce((sum, v) => sum + v.total, 0),
             ventasMes: ventasMesList.reduce((sum, v) => sum + v.total, 0),
             ventasCountHoy: ventasHoyList.length,
+            ventasCountSemana: ventasSemanaList.length,
             ventasCountMes: ventasMesList.length,
             
             cuentasPorCobrar: totalPorCobrar,
             clientesConDeuda: clientesDeudores,
+
+            deudaProveedores: totalDeudaProveedores,
+            proveedoresConDeuda: proveedoresConDeuda,
             
             stockBajo: productosBajoStock,
             
@@ -76,10 +98,18 @@ export default function Dashboard() {
             
             gastosMesMonto: gastosMesList.reduce((sum, g) => sum + g.monto, 0),
             gastosMesCount: gastosMesList.length,
+            
+            gastosHoyMonto: gastosHoyList.reduce((sum, g) => sum + g.monto, 0),
+            gastosHoyCount: gastosHoyList.length,
 
             notasTotal: notas.length,
-        });
 
+            proveedoresTotal: proveedores.length,
+            proveedoresActivos: proveedores.filter(p => p.estado === 'activo').length,
+        });
+        };
+        
+        loadData();
     }, []);
 
     const modules = [
@@ -123,8 +153,8 @@ export default function Dashboard() {
             title: 'Proveedores',
             description: 'Gestionar proveedores',
             stats: [
-                { value: '8', label: 'Total', type: 'normal' },
-                { value: '5', label: 'Activos', type: 'success' }
+                { value: stats.proveedoresTotal, label: 'Total', type: 'normal' },
+                { value: stats.proveedoresActivos, label: 'Activos', type: 'success' }
             ]
         },
         {
@@ -162,18 +192,7 @@ export default function Dashboard() {
                 { value: stats.notasTotal, label: 'Total', type: 'normal' },
                 { value: 'Active', label: 'Estado', type: 'success' }
             ]
-        },
-        {
-            href: '/ventas',
-            icon: '🛒',
-            iconClass: 'green',
-            title: 'Ventas',
-            description: 'Gestionar ventas',
-            stats: [
-                { value: formatearMoneda(stats.ventasHoy), label: 'Hoy', type: 'success' },
-                { value: stats.ventasCountMes, label: 'Mes', type: 'normal' }
-            ]
-        },
+        }
     ];
 
     const quickActions = [
@@ -183,22 +202,27 @@ export default function Dashboard() {
         { icon: '💰', label: 'Registrar Abono', href: '/creditos' },
     ];
 
+    const [filtroVentas, setFiltroVentas] = useState('hoy');
+
     const metrics = [
         {
             icon: '💰',
             iconClass: 'green',
-            title: 'Ventas del Día',
-            value: formatearMoneda(stats.ventasHoy),
-            change: `${stats.ventasCountHoy} ventas`,
-            changeType: 'positive'
+            title: 'Ventas Totales',
+            value: formatearMoneda(filtroVentas === 'hoy' ? stats.ventasHoy : filtroVentas === 'semana' ? stats.ventasSemana : stats.ventasMes),
+            change: `${filtroVentas === 'hoy' ? stats.ventasCountHoy : filtroVentas === 'semana' ? stats.ventasCountSemana : stats.ventasCountMes} ventas`,
+            changeType: 'positive',
+            hasFilter: true,
+            onFilterChange: setFiltroVentas,
+            currentFilter: filtroVentas
         },
         {
-            icon: '📊',
-            iconClass: 'blue',
-            title: 'Ventas del Mes',
-            value: formatearMoneda(stats.ventasMes),
-            change: `${stats.ventasCountMes} ventas`,
-            changeType: 'positive'
+            icon: '💸',
+            iconClass: 'red',
+            title: 'Gastos del Día',
+            value: formatearMoneda(stats.gastosHoyMonto || 0),
+            change: `${stats.gastosHoyCount || 0} gastos`,
+            changeType: 'negative'
         },
         {
             icon: '⚠️',
@@ -206,15 +230,25 @@ export default function Dashboard() {
             title: 'Cuentas por Cobrar',
             value: formatearMoneda(stats.cuentasPorCobrar),
             change: `${stats.clientesConDeuda} clientes`,
-            changeType: stats.cuentasPorCobrar > 0 ? 'negative' : 'positive'
+            changeType: stats.cuentasPorCobrar > 0 ? 'negative' : 'positive',
+            href: '/creditos'
+        },
+        {
+            icon: '🚚',
+            iconClass: 'purple',
+            title: 'Deuda a Proveedores',
+            value: formatearMoneda(stats.deudaProveedores || 0),
+            change: `${stats.proveedoresConDeuda || 0} proveedores`,
+            changeType: stats.deudaProveedores > 0 ? 'negative' : 'positive',
+            href: '/proveedores'
         },
         {
             icon: '📦',
             iconClass: 'red',
             title: 'Productos Stock Bajo',
             value: stats.stockBajo,
-            change: stats.stockBajo > 0 ? 'Requiere atención' : 'Todo en orden',
-            changeType: stats.stockBajo > 0 ? 'negative' : 'positive'
+            changeType: stats.stockBajo > 0 ? 'negative' : 'positive',
+            href: '/productos'
         },
     ];
 
@@ -254,20 +288,47 @@ export default function Dashboard() {
                     </div>
                 </div>
                 <div className="cards-grid cards-grid-lg">
-                    {metrics.map((metric, index) => (
-                        <div key={index} className="metric-card">
-                            <div className={`metric-card-icon module-card-icon ${metric.iconClass}`}>
-                                {metric.icon}
-                            </div>
-                            <div className="metric-card-content">
-                                <h4>{metric.title}</h4>
-                                <div className="value">{metric.value}</div>
-                                <div className={`change ${metric.changeType}`}>
-                                    {metric.changeType === 'positive' && metric.title.includes('Venta') ? '↑' : ''} {metric.change}
+                    {metrics.map((metric, index) => {
+                        const CardWrapper = metric.href ? Link : 'div';
+                        const CardProps = metric.href ? { href: metric.href, style: { textDecoration: 'none', color: 'inherit' } } : {};
+
+                        return (
+                            <CardWrapper key={index} {...CardProps} className="metric-card" style={metric.href ? { cursor: 'pointer', transition: 'transform 0.2s', ':hover': { transform: 'translateY(-4px)' } } : {}}>
+                                <div className={`metric-card-icon module-card-icon ${metric.iconClass}`}>
+                                    {metric.icon}
                                 </div>
-                            </div>
-                        </div>
-                    ))}
+                                <div className="metric-card-content" style={{ flex: 1 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                        <h4>{metric.title}</h4>
+                                        {metric.hasFilter && (
+                                            <select 
+                                                value={metric.currentFilter}
+                                                onChange={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    metric.onFilterChange(e.target.value);
+                                                }}
+                                                style={{
+                                                    fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px',
+                                                    border: '1px solid #d1d5db', background: 'white', color: '#374151',
+                                                    cursor: 'pointer'
+                                                }}
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <option value="hoy">Hoy</option>
+                                                <option value="semana">Semana</option>
+                                                <option value="mes">Mes</option>
+                                            </select>
+                                        )}
+                                    </div>
+                                    <div className="value">{metric.value}</div>
+                                    <div className={`change ${metric.changeType}`}>
+                                        {metric.changeType === 'positive' && metric.title.includes('Venta') ? '↑' : ''} {metric.change}
+                                    </div>
+                                </div>
+                            </CardWrapper>
+                        );
+                    })}
                 </div>
             </section>
 

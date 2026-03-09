@@ -16,6 +16,7 @@ import {
   generarNumeroFactura
 } from '@/lib/storage';
 import { FacturaPreview } from '@/components/factura';
+import { formatearMoneda, formatearNumero, parseDecimal } from '@/lib/numberToText';
 
 export default function VentasPage() {
   const [clientes, setClientes] = useState([]);
@@ -28,6 +29,7 @@ export default function VentasPage() {
   const [metodoPago, setMetodoPago] = useState('contado');
   const [tipoFactura, setTipoFactura] = useState('debito'); // debito = hoy, credito = fecha seleccionable
   const [fechaVencimiento, setFechaVencimiento] = useState('');
+  const [direccionEntrega, setDireccionEntrega] = useState(''); // 🆕 Dirección de entrega
   const [busquedaCliente, setBusquedaCliente] = useState('');
   const [busquedaProducto, setBusquedaProducto] = useState('');
   const [mostrarClientes, setMostrarClientes] = useState(false);
@@ -58,10 +60,10 @@ export default function VentasPage() {
   };
 
   // Función para confirmar eliminación
-  const confirmarEliminacion = () => {
+  const confirmarEliminacion = async () => {
     if (confirmarTexto.toLowerCase() === 'eliminar' && ventaAEliminar) {
-      deleteVenta(ventaAEliminar.id);
-      setVentas(getVentas());
+      await deleteVenta(ventaAEliminar.id);
+      setVentas(await getVentas());
       setMostrarModalEliminar(false);
       setVentaAEliminar(null);
       setConfirmarTexto('');
@@ -76,52 +78,52 @@ export default function VentasPage() {
     setConfirmarTexto('');
   };
   
-  // Cargar datos
+  // Cargar datos y escuchar cambios en tiempo real
   useEffect(() => {
-    setClientes(getClientes());
-    setProductos(getProductos());
-    setVentas(getVentas());
+    const cargarDatos = async () => {
+      setClientes(await getClientes());
+      setProductos(await getProductos());
+      setVentas(await getVentas());
+    };
+
+    cargarDatos();
+
+    window.addEventListener('cueramaro_data_updated', cargarDatos);
+    return () => window.removeEventListener('cueramaro_data_updated', cargarDatos);
   }, []);
 
   // Filtrar clientes por búsqueda (mostrar todos si no hay búsqueda)
   const clientesFiltrados = busquedaCliente.length > 0 
     ? clientes.filter(c => 
-        c.nombre.toLowerCase().includes(busquedaCliente.toLowerCase()) ||
-        c.telefono.includes(busquedaCliente)
+        (c.nombre || '').toLowerCase().includes(busquedaCliente.toLowerCase()) ||
+        (c.telefono || '').includes(busquedaCliente)
       ).slice(0, 8)
     : clientes.slice(0, 8);
 
   // Filtrar productos por búsqueda
   const productosFiltrados = productos.filter(p => 
-    p.nombre.toLowerCase().includes(busquedaProducto.toLowerCase()) ||
-    p.categoria.toLowerCase().includes(busquedaProducto.toLowerCase())
+    (p.nombre || '').toLowerCase().includes(busquedaProducto.toLowerCase()) ||
+    (p.categoria || '').toLowerCase().includes(busquedaProducto.toLowerCase())
   );
 
   // Calcular totales
-  const subtotal = carrito.reduce((sum, item) => sum + (item.precioVenta * item.cantidad), 0);
+  const subtotal = carrito.reduce((sum, item) => sum + (item.precioVenta * parseDecimal(item.cantidad)), 0);
   const total = subtotal;
 
-  // Estadísticas del día - usar fecha local para evitar problemas de timezone
+  // Estadísticas del día - mitigando problemas de timezone (UTC a Local)
   const hoy = new Date();
-  const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
   
   const ventasHoy = ventas.filter(v => {
-    // Comparar la parte de fecha de la venta (puede ser ISO o local)
-    const fechaVenta = v.fecha ? v.fecha.split('T')[0] : '';
-    return fechaVenta === hoyStr;
+    if (!v.fecha) return false;
+    // v.fecha puede venir como '2026-03-04T00:24...Z'
+    const fechaVenta = new Date(v.fecha);
+    return fechaVenta.getFullYear() === hoy.getFullYear() &&
+           fechaVenta.getMonth() === hoy.getMonth() &&
+           fechaVenta.getDate() === hoy.getDate();
   });
   const totalVentasHoy = ventasHoy.reduce((sum, v) => sum + v.total, 0);
   const ventasContadoHoy = ventasHoy.filter(v => v.metodoPago === 'contado').reduce((sum, v) => sum + v.total, 0);
   const ventasCreditoHoy = ventasHoy.filter(v => v.metodoPago === 'credito').reduce((sum, v) => sum + v.total, 0);
-
-  const formatearMoneda = (cantidad) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(cantidad);
-  };
 
   const getCategoriaIcon = (categoria) => {
     const iconos = {
@@ -137,22 +139,19 @@ export default function VentasPage() {
     setClienteSeleccionado(cliente);
     setBusquedaCliente('');
     setMostrarClientes(false);
+    // 🆕 Inicializar dirección de entrega con la dirección de entrega del cliente (sin fallback a dirección fiscal)
+    setDireccionEntrega(cliente.direccionEntrega || '');
     
-    // Si el cliente es de crédito, configurar automáticamente
+    // Si el cliente es de crédito, configurar automáticamente el tipo, PERO NO LOS DÍAS
     if (cliente.tipoCliente === 'credito') {
       setMetodoPago('credito');
       setTipoFactura('credito');
       
-      // Calcular fecha de vencimiento automática
-      if (cliente.diasCredito > 0) {
-        const fecha = new Date();
-        fecha.setDate(fecha.getDate() + parseInt(cliente.diasCredito));
-        setFechaVencimiento(fecha.toISOString().split('T')[0]);
-      } else {
-        setFechaVencimiento('');
-      }
+      // Ya NO calculamos fecha automática basada en cliente.diasCredito
+      // Se deja vacío o con fecha de hoy para que el usuario elija manualmente
+      setFechaVencimiento(''); 
     } else {
-      // Si no es crédito, volver a contado por defecto (opcional, pero recomendado)
+      // Si no es crédito, volver a contado por defecto
       setMetodoPago('contado');
       setTipoFactura('debito');
       setFechaVencimiento('');
@@ -183,17 +182,32 @@ export default function VentasPage() {
 
   const actualizarCantidad = (productoId, nuevaCantidad) => {
     const producto = productos.find(p => p.id === productoId);
-    if (nuevaCantidad > producto.stock) {
+    
+    // Permitir string vacío para edición
+    if (nuevaCantidad === '') {
+      setCarrito(carrito.map(item => 
+        item.id === productoId 
+          ? { ...item, cantidad: '' }
+          : item
+      ));
+      return;
+    }
+
+    const cantidadDecimal = parseDecimal(nuevaCantidad);
+    
+    // Validación de stock solo si es un número válido
+    if (cantidadDecimal > producto.stock) {
       showToast(`Solo hay ${producto.stock} ${producto.unidad} disponibles`, 'warning');
       return;
     }
-    if (nuevaCantidad <= 0) {
-      eliminarDelCarrito(productoId);
-      return;
-    }
+    
+    // Si es 0 o menor (y no es vacío), preguntamos o eliminamos
+    // Pero para UX de escritura (ej: escribiendo 0.5), permitimos el 0 inicial
+    // La limpieza real se hace en onBlur o botón eliminar
+    
     setCarrito(carrito.map(item => 
       item.id === productoId 
-        ? { ...item, cantidad: nuevaCantidad }
+        ? { ...item, cantidad: nuevaCantidad } // Guardamos lo que viene (puede ser número o string '0.')
         : item
     ));
   };
@@ -208,11 +222,12 @@ export default function VentasPage() {
     setMetodoPago('contado');
     setTipoFactura('debito');
     setFechaVencimiento('');
+    setDireccionEntrega(''); // 🆕 Limpiar dirección de entrega
     setBusquedaCliente('');
     setBusquedaProducto('');
   };
 
-  const procesarVenta = () => {
+  const procesarVenta = async () => {
     if (carrito.length === 0) {
       showToast('Agrega productos al carrito', 'warning');
       return;
@@ -231,62 +246,69 @@ export default function VentasPage() {
 
     setProcesando(true);
 
-    // Fechas
-    const hoy = new Date();
-    const fechaEmision = hoy.toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase();
-    const fechaVenc = tipoFactura === 'credito' 
-      ? new Date(fechaVencimiento).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase()
-      : fechaEmision;
+    try {
+      // Fechas
+      const hoy = new Date();
+      const fechaEmision = hoy.toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase();
+      const fechaVenc = tipoFactura === 'credito' 
+        ? (() => {
+            const [anio, mes, dia] = fechaVencimiento.split('-');
+            return new Date(anio, mes - 1, dia).toLocaleDateString('es-MX', { day: '2-digit', month: 'long', year: 'numeric' }).toUpperCase();
+          })()
+        : fechaEmision;
 
-    // Crear la venta
-    const nuevaVenta = addVenta({
-      clienteId: clienteSeleccionado?.id || null,
-      clienteNombre: clienteSeleccionado?.nombre || 'Público General',
-      productos: carrito.map(item => ({
-        id: item.id,
-        nombre: item.nombre,
-        cantidad: item.cantidad,
-        unidad: item.unidad || 'KG',
-        codigo: `PROD-${String(item.id).padStart(3, '0')}`,
-        precioUnitario: item.precioVenta,
-        subtotal: item.precioVenta * item.cantidad
-      })),
-      subtotal: subtotal,
-      descuento: 0,
-      total: total,
-      metodoPago: metodoPago,
-      tipoFactura: tipoFactura,
-      estado: metodoPago === 'credito' ? 'pendiente' : 'pagado',
-    });
+      // Crear la venta
+      const nuevaVenta = await addVenta({
+        clienteId: clienteSeleccionado?.id || null,
+        clienteNombre: clienteSeleccionado?.nombre || 'Público General',
+        productos: carrito.map(item => ({
+          id: item.id,
+          nombre: item.nombre,
+          cantidad: parseDecimal(item.cantidad),
+          unidad: item.unidad || 'KG',
+          codigo: `PROD-${String(item.id).padStart(3, '0')}`,
+          precioUnitario: item.precioVenta,
+          subtotal: item.precioVenta * parseDecimal(item.cantidad)
+        })),
+        subtotal: subtotal,
+        descuento: 0,
+        total: total,
+        metodoPago: metodoPago,
+        tipoFactura: tipoFactura,
+        // 🔥 FIX CRÍTICO: Guardar la fecha de vencimiento seleccionada
+        fechaVencimiento: tipoFactura === 'credito' ? fechaVencimiento : null,
+        historialVencimientos: [], // Inicializar historial vacío
+        estado: metodoPago === 'credito' ? 'pendiente' : 'pagado',
+      });
 
-    // Actualizar stock de productos
-    carrito.forEach(item => {
-      actualizarStock(item.id, item.cantidad, 'restar');
-    });
+      // Actualizar stock de productos. En la lib/storage addVenta ya hace esto para compatibilidad, pero lo dejaremos así por seguridad visual o lo limpiaremos pronto si hay colisión.
+      // ⚠️ UPDATE: `addVenta` internamente ya descuenta stock al usar await actualizarStock(). Solo refrescamos los productos.
+      setProductos(await getProductos());
 
-    // Si es a crédito, actualizar saldo del cliente
-    if (metodoPago === 'credito' && clienteSeleccionado) {
-      const clienteActualizado = {
-        ...clienteSeleccionado,
-        saldoPendiente: (clienteSeleccionado.saldoPendiente || 0) + total,
-        ultimaCompra: new Date().toISOString().split('T')[0]
-      };
-      updateCliente(clienteSeleccionado.id, clienteActualizado);
-    }
+      // Si es a crédito, actualizar saldo del cliente. La lib/storage ya lo hace, solo refrescamos.
+      if (metodoPago === 'credito' && clienteSeleccionado) {
+        setClientes(await getClientes());
+      }
 
-    // 🆕 Generar factura automáticamente
-    const datosFactura = {
-      ventaId: nuevaVenta.id,
-      numeroFactura: generarNumeroFactura(),
+      // 🆕 Generar factura automáticamente
+      const numFactura = await generarNumeroFactura();
+      const datosFactura = {
+        ventaId: nuevaVenta.id,
+        numeroFactura: numFactura,
       fechaEmision: fechaEmision,
       fechaVencimiento: fechaVenc,
       expedidaEn: 'CUERÁMARO, GUANAJUATO',
       metodoPago: metodoPago === 'credito' ? 'CRÉDITO' : metodoPago === 'transferencia' ? 'TRANSFERENCIA' : 'CONTADO/EFECTIVO',
-      plazoPago: tipoFactura === 'credito' 
+      plazoPago: tipoFactura === 'credito'
         ? (() => {
-            const hoyDate = new Date();
-            const vencDate = new Date(fechaVencimiento);
-            const diffTime = Math.abs(vencDate - hoyDate);
+            // Fix: Normalizar ambas fechas a medianoche local para cálculo exacto de días
+            const hoy = new Date();
+            const hoyMidnight = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+
+            const [anio, mes, dia] = fechaVencimiento.split('-'); // fechaVencimiento viene como YYYY-MM-DD
+            const vencMidnight = new Date(parseInt(anio), parseInt(mes) - 1, parseInt(dia));
+
+            const diffTime = vencMidnight - hoyMidnight;
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             return `${diffDays} DÍAS`;
           })()
@@ -299,15 +321,17 @@ export default function VentasPage() {
         direccion: clienteSeleccionado?.direccion || '',
         cp: clienteSeleccionado?.cp || '',
         rfc: clienteSeleccionado?.rfc || '',
-        telefono: clienteSeleccionado?.telefono || ''
+        telefono: clienteSeleccionado?.telefono || '',
+        ciudad: clienteSeleccionado?.ciudad || '', // 🆕 Ciudad explícita añadida
+        direccionEntrega: direccionEntrega || '' // 🆕 Dirección de entrega (solo lo que se escribe)
       },
       productos: carrito.map(item => ({
-        cantidad: item.cantidad,
+        cantidad: parseDecimal(item.cantidad),
         codigo: `PROD-${String(item.id).padStart(3, '0')}`,
         unidad: item.unidad || 'KG',
         descripcion: item.nombre.toUpperCase(),
         precioUnitario: item.precioVenta,
-        importe: item.precioVenta * item.cantidad
+        importe: item.precioVenta * parseDecimal(item.cantidad)
       })),
       subtotal: subtotal,
       total: total,
@@ -315,7 +339,7 @@ export default function VentasPage() {
     };
 
     const facturaCreada = addFactura(datosFactura);
-    
+
     // Guardar para mostrar preview
     setFacturaGenerada({
       ...datosFactura,
@@ -324,17 +348,22 @@ export default function VentasPage() {
     });
 
     // Refrescar datos
-    setProductos(getProductos());
-    setVentas(getVentas());
-    setClientes(reloadClientes());
+    setProductos(await getProductos());
+    setVentas(await getVentas());
+    setClientes(await reloadClientes());
 
     // Limpiar venta
     limpiarVenta();
-    setProcesando(false);
 
     // Mostrar preview de factura
-    setMostrarFacturaPreview(true);
-    showToast(`Venta #${nuevaVenta.id} - Factura ${facturaCreada.numeroFactura} generada`, 'success');
+      setMostrarFacturaPreview(true);
+      showToast(`Venta #${nuevaVenta.id} - Factura ${facturaCreada.numeroFactura} generada`, 'success');
+    } catch (error) {
+      console.error('Error al procesar venta:', error);
+      showToast('❌ Error al guardar la venta: ' + error.message, 'error');
+    } finally {
+      setProcesando(false);
+    }
   };
 
   return (
@@ -444,7 +473,7 @@ export default function VentasPage() {
                   <span className={styles.productoPrecio}>{formatearMoneda(producto.precioVenta)}</span>
                 </div>
                 <span className={`${styles.stockBadge} ${producto.stock <= producto.stockMinimo ? styles.bajo : ''}`}>
-                  {producto.stock} {producto.unidad}
+                  {formatearNumero(producto.stock)} {producto.unidad}
                 </span>
               </div>
             ))}
@@ -459,10 +488,19 @@ export default function VentasPage() {
             {clienteSeleccionado ? (
               <div className={styles.clienteSeleccionado}>
                 <div className={styles.clienteInfo}>
-                  <span className={styles.clienteNombre}>{clienteSeleccionado.nombre}</span>
-                  <span className={styles.clienteTipo}>
-                    {clienteSeleccionado.tipoCliente === 'credito' ? '💳 Crédito' : '💵 Contado'}
-                  </span>
+                  {clienteSeleccionado.avatarURL ? (
+                    <img 
+                      src={clienteSeleccionado.avatarURL} 
+                      alt="Avatar"
+                      style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', marginRight: '10px' }}
+                    />
+                  ) : null}
+                  <div>
+                    <span className={styles.clienteNombre}>{clienteSeleccionado.nombre}</span>
+                    <span className={styles.clienteTipo}>
+                      {clienteSeleccionado.tipoCliente === 'credito' ? '💳 Crédito' : '💵 Contado'}
+                    </span>
+                  </div>
                 </div>
                 <button onClick={() => setClienteSeleccionado(null)}>✕</button>
               </div>
@@ -486,8 +524,32 @@ export default function VentasPage() {
                         key={cliente.id} 
                         className={styles.clienteOption}
                         onClick={() => seleccionarCliente(cliente)}
+                        style={{ display: 'flex', alignItems: 'center' }}
                       >
-                        <span>{cliente.nombre}</span>
+                         {cliente.avatarURL ? (
+                            <img 
+                              src={cliente.avatarURL} 
+                              alt="Avatar"
+                              style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover', marginRight: '10px' }}
+                            />
+                          ) : (
+                            <div style={{ 
+                              width: '30px', 
+                              height: '30px', 
+                              borderRadius: '50%', 
+                              background: '#e5e7eb', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              marginRight: '10px',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                              color: '#6b7280'
+                            }}>
+                              {cliente.nombre.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        <span style={{ flex: 1 }}>{cliente.nombre}</span>
                         <span className={styles.clienteTipoBadge}>
                           {cliente.tipoCliente === 'credito' ? '💳' : '💵'}
                         </span>
@@ -517,16 +579,22 @@ export default function VentasPage() {
                     </div>
                     <div className={styles.itemCantidad}>
                       <button onClick={() => actualizarCantidad(item.id, item.cantidad - 1)}>−</button>
-                      <input
-                        type="number"
-                        value={item.cantidad}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value) || 0;
-                          if (val > 0) actualizarCantidad(item.id, val);
-                        }}
-                        min="1"
-                        style={{
-                          width: '45px',
+                        <input
+                          type="number"
+                          value={item.cantidad}
+                          onFocus={(e) => e.target.select()}
+                          onChange={(e) => {
+                            actualizarCantidad(item.id, e.target.value);
+                          }}
+                          onBlur={(e) => {
+                            // Si al salir está vacío o 0, resetear a 1 o eliminar (según preferencia)
+                            // Aquí reseteamos a 1 si quedó inválido para evitar errores
+                            if (!item.cantidad || item.cantidad === 0) actualizarCantidad(item.id, 1);
+                          }}
+                          step="0.001"
+                          min="0"
+                          style={{
+                          width: '80px',
                           textAlign: 'center',
                           border: '1px solid #ddd',
                           borderRadius: '6px',
@@ -538,7 +606,7 @@ export default function VentasPage() {
                       <button onClick={() => actualizarCantidad(item.id, item.cantidad + 1)}>+</button>
                     </div>
                     <div className={styles.itemSubtotal}>
-                      {formatearMoneda(item.precioVenta * item.cantidad)}
+                      {formatearMoneda(item.precioVenta * parseDecimal(item.cantidad))}
                     </div>
                     <button 
                       className={styles.eliminarBtn}
@@ -604,12 +672,30 @@ export default function VentasPage() {
                 type="date"
                 value={fechaVencimiento}
                 onChange={(e) => setFechaVencimiento(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
+                min={new Date().toLocaleDateString('en-CA')} // Formato YYYY-MM-DD local
                 className={styles.dateInput}
                 style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px' }}
               />
             </div>
           )}
+
+          {/* 🆕 Dirección de Entrega */}
+          <div className={styles.metodoPagoSection}>
+            <label>📍 Dirección de Entrega</label>
+            <input
+              type="text"
+              value={direccionEntrega}
+              readOnly
+              placeholder={clienteSeleccionado ? (clienteSeleccionado.direccionEntrega || "Sin dirección de entrega registrada") : "Selecciona un cliente"}
+              className={styles.dateInput}
+              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', backgroundColor: '#f3f4f6', cursor: 'not-allowed', color: '#666' }}
+            />
+            {clienteSeleccionado && (
+              <small style={{ color: '#6b7280', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                Por defecto: {clienteSeleccionado.direccion || 'Sin dirección'}
+              </small>
+            )}
+          </div>
 
           {/* Totales */}
           <div className={styles.totalesSection}>
@@ -684,10 +770,15 @@ export default function VentasPage() {
                           <span className={styles.ventaTotal}>{formatearMoneda(venta.total)}</span>
                           <button 
                             className={styles.btnEliminarVenta}
+                            style={{ 
+                              padding: '6px 12px', borderRadius: '6px', border: '1px solid #fca5a5', 
+                              background: '#fef2f2', color: '#dc2626', fontWeight: '600', 
+                              display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.85rem'
+                            }}
                             onClick={() => iniciarEliminacion(venta)}
                             title="Eliminar venta"
                           >
-                            🗑️
+                            <span>🗑️</span> Eliminar Venta
                           </button>
                         </div>
                       </div>

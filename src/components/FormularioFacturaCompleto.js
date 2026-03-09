@@ -19,10 +19,11 @@ export default function FormularioFacturaCompleto({ onSubmit, onCancel, clienteI
       codigo: clienteInicial?.id || '',
       nombre: clienteInicial?.nombre || '',
       direccion: clienteInicial?.direccion || '',
+      ciudad: clienteInicial?.ciudad || '',
       cp: clienteInicial?.cp || '',
       rfc: clienteInicial?.rfc || '',
       telefono: clienteInicial?.telefono || '',
-      direccionEntrega: clienteInicial?.direccion || ''
+      direccionEntrega: clienteInicial?.direccionEntrega || ''
     },
     
     // Productos
@@ -56,10 +57,9 @@ export default function FormularioFacturaCompleto({ onSubmit, onCancel, clienteI
       return sum + (cantidad * precio);
     }, 0);
     
-    const iva = subtotal * 0.16;
-    const total = subtotal + iva;
+    const total = subtotal;
     
-    return { subtotal, iva, total };
+    return { subtotal, iva: 0, total };
   };
 
   const handleSubmit = (e) => {
@@ -97,7 +97,8 @@ export default function FormularioFacturaCompleto({ onSubmit, onCancel, clienteI
     onSubmit(facturaCompleta);
   };
 
-  const { subtotal, iva, total } = calcularTotales();
+    const { subtotal, total } = calcularTotales();
+    const iva = 0;
 
   return (
     <form className={styles.formularioCompleto} onSubmit={handleSubmit}>
@@ -202,7 +203,6 @@ export default function FormularioFacturaCompleto({ onSubmit, onCancel, clienteI
             />
           </div>
           <div className={styles.formGroup}>
-            <label>Dirección</label>
             <input
               type="text"
               value={formData.cliente.direccion}
@@ -211,6 +211,18 @@ export default function FormularioFacturaCompleto({ onSubmit, onCancel, clienteI
                 cliente: { ...formData.cliente, direccion: e.target.value } 
               })}
               placeholder="Calle, número, colonia"
+            />
+          </div>
+          <div className={styles.formGroup}>
+            <label>Ciudad</label>
+            <input
+              type="text"
+              value={formData.cliente.ciudad}
+              onChange={(e) => setFormData({ 
+                ...formData, 
+                cliente: { ...formData.cliente, ciudad: e.target.value } 
+              })}
+              placeholder="Ej: León"
             />
           </div>
           <div className={styles.formGroup}>
@@ -258,7 +270,7 @@ export default function FormularioFacturaCompleto({ onSubmit, onCancel, clienteI
                 ...formData, 
                 cliente: { ...formData.cliente, direccionEntrega: e.target.value } 
               })}
-              placeholder="Si es diferente a la dirección principal"
+              placeholder="Dirección de entrega (Opcional)"
             />
           </div>
         </div>
@@ -364,10 +376,6 @@ export default function FormularioFacturaCompleto({ onSubmit, onCancel, clienteI
             <span>Subtotal:</span>
             <span>${subtotal.toFixed(2)}</span>
           </div>
-          <div className={styles.totalRow}>
-            <span>IVA (16%):</span>
-            <span>${iva.toFixed(2)}</span>
-          </div>
           <div className={`${styles.totalRow} ${styles.totalFinal}`}>
             <span>Total:</span>
             <span>${total.toFixed(2)}</span>
@@ -381,7 +389,7 @@ export default function FormularioFacturaCompleto({ onSubmit, onCancel, clienteI
           Cancelar
         </button>
         <button type="submit" className={styles.btnPrimary}>
-          ✅ Generar Factura en Google Sheets
+          ✅ Generar Factura
         </button>
       </div>
     </form>

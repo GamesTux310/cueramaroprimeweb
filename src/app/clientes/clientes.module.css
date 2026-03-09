@@ -331,6 +331,7 @@
 .acciones {
     display: flex;
     gap: 8px;
+    flex-wrap: wrap;
 }
 
 .btnAccion {
@@ -347,6 +348,40 @@
 .btnAccion:hover {
     background: var(--primary-100);
     transform: scale(1.1);
+}
+
+.btnActionWithText {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--gray-100);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.btnActionWithText:hover {
+    background: var(--primary-100);
+    color: var(--primary-700);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.btnDeleteWithText {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.btnDeleteWithText:hover {
+    background: #fecaca;
+    color: #b91c1c;
 }
 
 /* Modal */
@@ -701,6 +736,33 @@
     border: 1px solid var(--gray-200);
     border-radius: var(--radius-md);
     background: white;
+}
+
+/* Upload Specifics */
+.comprobanteUpload {
+    position: relative;
+    border: 2px dashed var(--gray-300);
+    transition: all var(--transition-fast);
+}
+
+.comprobanteUpload:hover {
+    border-color: var(--primary-400);
+}
+
+.uploadLabel {
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--gray-50);
+    transition: all var(--transition-fast);
+}
+
+.uploadLabel:hover {
+    background: var(--gray-100);
 }
 
 /* Responsive */
