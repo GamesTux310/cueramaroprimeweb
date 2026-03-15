@@ -106,6 +106,63 @@
   flex: 1;
 }
 
+/* Filtros por Tipo */
+.filtrosContainer {
+  margin-bottom: 24px;
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.filtrosLabel {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+.filtrosGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.filtroBtn {
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.filtroBtn:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.filtroBtn.activo {
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.fVenta.activo { background: #059669; }
+.fAbono.activo { background: #10b981; }
+.fCompra.activo { background: #3b82f6; }
+.fGasto.activo { background: #dc2626; }
+.fMerma.activo { background: #ef4444; }
+.fNota.activo { background: #f59e0b; }
+
 /* Leyenda de Colores */
 .leyenda {
   display: flex;

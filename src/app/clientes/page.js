@@ -11,7 +11,7 @@ import FacturaPreview from '@/components/factura/FacturaPreview';
 
 export default function ClientesPage() {
     const [clientes, setClientes] = useState([]);
-    const [facturas, setFacturas] = useState([]); 
+    const [facturas, setFacturas] = useState([]);
     const [ventasData, setVentasData] = useState([]);
     const [abonosData, setAbonosData] = useState([]);
     const [busqueda, setBusqueda] = useState('');
@@ -29,7 +29,7 @@ export default function ClientesPage() {
     });
     const [modoEdicion, setModoEdicion] = useState(false);
     const [clienteEditando, setClienteEditando] = useState(null);
-    
+
     // Estados para eliminación segura
     const [clienteAEliminar, setClienteAEliminar] = useState(null);
     const [confirmarTexto, setConfirmarTexto] = useState('');
@@ -40,10 +40,10 @@ export default function ClientesPage() {
     const [facturaSeleccionada, setFacturaSeleccionada] = useState(null);
     const [filtroHistorial, setFiltroHistorial] = useState('todas');
     const [filtroMovimientosGlobal, setFiltroMovimientosGlobal] = useState('todas');
-    
+
     // Toast
     const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
-    
+
     // Estado del formulario
     const [formData, setFormData] = useState({
         nombre: '',
@@ -74,7 +74,7 @@ export default function ClientesPage() {
 
         // Escuchar eventos de sincronización en tiempo real
         window.addEventListener('cueramaro_data_updated', cargarClientes);
-        
+
         return () => {
             window.removeEventListener('cueramaro_data_updated', cargarClientes);
         };
@@ -111,14 +111,14 @@ export default function ClientesPage() {
     };
 
     const parsearFecha = (fechaInput) => {
-      if (!fechaInput) return new Date();
-      if (fechaInput instanceof Date) return fechaInput;
-      if (fechaInput.indexOf('T') > -1) return new Date(fechaInput);
-      if (fechaInput.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        const [anio, mes, dia] = fechaInput.split('-');
-        return new Date(anio, mes - 1, dia);
-      }
-      return new Date(fechaInput);
+        if (!fechaInput) return new Date();
+        if (fechaInput instanceof Date) return fechaInput;
+        if (fechaInput.indexOf('T') > -1) return new Date(fechaInput);
+        if (fechaInput.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            const [anio, mes, dia] = fechaInput.split('-');
+            return new Date(anio, mes - 1, dia);
+        }
+        return new Date(fechaInput);
     };
 
 
@@ -160,10 +160,10 @@ export default function ClientesPage() {
                     otrosDocURL: formData.otrosDocURL,
                     avatarURL: formData.avatarURL,
                 };
-                
+
                 // Usar updateCliente del storage para guardar correctamente
                 const resultado = await updateCliente(clienteEditando.id, clienteActualizado);
-                
+
                 if (!resultado) {
                     throw new Error(`No se pudo actualizar el cliente (ID: ${clienteEditando.id} no encontrado).`);
                 }
@@ -190,19 +190,19 @@ export default function ClientesPage() {
                     otrosDocURL: formData.otrosDocURL,
                     avatarURL: formData.avatarURL,
                 });
-                
+
                 setClientes(await getClientes());
                 showToast(`Cliente "${nuevoCliente.nombre}" guardado exitosamente`, 'success');
             }
 
             // Limpiar formulario y cerrar modal
             setFormData({
-            nombre: '',
-            telefono: '',
-            email: '',
-            direccion: '',
-            direccionEntrega: '',
-            ciudad: 'CUERÁMARO, GUANAJUATO',
+                nombre: '',
+                telefono: '',
+                email: '',
+                direccion: '',
+                direccionEntrega: '',
+                ciudad: 'CUERÁMARO, GUANAJUATO',
                 cp: '',
                 rfc: '',
                 tipoCliente: 'contado',
@@ -242,7 +242,7 @@ export default function ClientesPage() {
 
     const procesarDocumento = async (file, tipo) => {
         console.log(`[ClientesPage] 📄 Procesando documento LOCAL: ${tipo}, Archivo: ${file?.name}`);
-        
+
         if (!file.type.startsWith('image/')) {
             showToast('Solo se permiten imágenes para modo offline', 'warning');
             return;
@@ -250,11 +250,11 @@ export default function ClientesPage() {
 
         try {
             setSubiendoImagenes(prev => ({ ...prev, [tipo]: true }));
-            
+
             // Usar helper para comprimir y obtener Base64 (Offline First)
             const { compressImageToBase64 } = await import('@/lib/imageHelper');
             const base64 = await compressImageToBase64(file);
-            
+
             console.log(`[ClientesPage] ✅ Imagen procesada localmente (${base64.length} chars)`);
 
             if (tipo === 'credencial') {
@@ -266,7 +266,7 @@ export default function ClientesPage() {
             } else if (tipo === 'avatar') {
                 setFormData(prev => ({ ...prev, avatarURL: base64 }));
             }
-            
+
             showToast('Imagen lista para guardar (Se subirá al sincronizar)', 'success');
         } catch (error) {
             console.error('[ClientesPage] ❌ Error procesando imagen local:', error);
@@ -325,7 +325,7 @@ export default function ClientesPage() {
             email: cliente.email || '',
             direccion: cliente.direccion || '',
             direccionEntrega: cliente.direccionEntrega || '',
-            ciudad: cliente.ciudad || 'CUERÁMARO, GUANAJUATO', 
+            ciudad: cliente.ciudad || 'CUERÁMARO, GUANAJUATO',
             cp: cliente.cp || '', // Added CP
             rfc: cliente.rfc || '', // Added RFC
             tipoCliente: cliente.tipoCliente || 'contado',
@@ -374,7 +374,7 @@ export default function ClientesPage() {
             clienteNombre: v.cliente?.nombre || 'General',
             clienteId: v.clienteId
         }));
-        
+
         const facturasG = facturas.map(f => ({
             tipo: 'FACTURA', fecha: f.fecha || f.fechaEmision, monto: f.total, metodo: f.metodoPago,
             id: f.id, raw: f,
@@ -384,7 +384,7 @@ export default function ClientesPage() {
             clienteNombre: f.cliente?.nombre || 'Desconocido',
             clienteId: f.clienteId
         }));
-        
+
         const abonosG = abonosData.map(a => ({
             tipo: 'ABONO', fecha: a.fecha, monto: a.monto, metodo: a.metodoPago,
             id: a.id, raw: a,
@@ -418,12 +418,12 @@ export default function ClientesPage() {
                     <span className={styles.toastMessage}>{toast.message}</span>
                 </div>
             )}
-            
+
             {/* Modal de Imagen Ampliada */}
             {modalImagen.show && (
                 <ImageModal
-                imageUrl={modalImagen.url}
-                onClose={() => setModalImagen({ show: false, url: '' })}
+                    imageUrl={modalImagen.url}
+                    onClose={() => setModalImagen({ show: false, url: '' })}
                 />
             )}
 
@@ -436,7 +436,10 @@ export default function ClientesPage() {
                             <button className={styles.closeButton} onClick={() => setFacturaSeleccionada(null)}>✕</button>
                         </div>
                         <div className={styles.modalBody}>
-                            <FacturaPreview factura={facturaSeleccionada} />
+                            <FacturaPreview
+                                factura={facturaSeleccionada}
+                                onClose={() => setFacturaSeleccionada(null)}
+                            />
                         </div>
                     </div>
                 </div>
@@ -445,76 +448,76 @@ export default function ClientesPage() {
             {/* Modal Detalle Venta */}
             {detalleVenta && (
                 <div className={styles.modalOverlay} onClick={() => setDetalleVenta(null)}>
-                <div className={styles.modal} onClick={e => e.stopPropagation()}>
-                    <div className={styles.modalHeader}>
-                    <h3>🛒 Detalle de la Venta</h3>
-                    <button className={styles.closeButton} onClick={() => setDetalleVenta(null)}>×</button>
+                    <div className={styles.modal} onClick={e => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <h3>🛒 Detalle de la Venta</h3>
+                            <button className={styles.closeButton} onClick={() => setDetalleVenta(null)}>×</button>
+                        </div>
+                        <div className={styles.modalBody}>
+                            <div className={styles.detalleRow} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <span style={{ fontWeight: 'bold' }}>Venta #:</span>
+                                <span>{detalleVenta.id}</span>
+                            </div>
+                            <div className={styles.detalleRow} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <span style={{ fontWeight: 'bold' }}>Fecha:</span>
+                                <span>{parsearFecha(detalleVenta.fecha).toLocaleDateString('es-MX')}</span>
+                            </div>
+                            <div className={styles.detalleRow} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <span style={{ fontWeight: 'bold' }}>Factura:</span>
+                                {facturas.find(f => f.ventaId === detalleVenta.id) ? (
+                                    <Link href="/facturas" className={styles.linkFactura} style={{ color: '#3b82f6', textDecoration: 'underline' }}>
+                                        {facturas.find(f => f.ventaId === detalleVenta.id).numeroFactura} ({facturas.find(f => f.ventaId === detalleVenta.id).estado}) 🔗
+                                    </Link>
+                                ) : (
+                                    <span style={{ color: '#9ca3af' }}>Sin factura</span>
+                                )}
+                            </div>
+                            <div className={styles.detalleRow} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <span style={{ fontWeight: 'bold' }}>Cliente:</span>
+                                <span>{detalleVenta.clienteNombre || detalleVenta.cliente?.nombre || 'Cliente General'}</span>
+                            </div>
+                            <div className={styles.detalleRow} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <span style={{ fontWeight: 'bold' }}>Método de Pago:</span>
+                                <span style={{ textTransform: 'capitalize' }}>{detalleVenta.metodoPago || 'Contado'}</span>
+                            </div>
+
+                            {/* Productos */}
+                            <div className={styles.detalleProductos} style={{ marginTop: '15px' }}>
+                                <span style={{ fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>Productos:</span>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                                    <thead>
+                                        <tr style={{ background: 'rgba(0,0,0,0.05)', textAlign: 'left' }}>
+                                            <th style={{ padding: '8px' }}>Prod.</th>
+                                            <th style={{ padding: '8px' }}>Cant.</th>
+                                            <th style={{ padding: '8px' }}>Precio</th>
+                                            <th style={{ padding: '8px' }}>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {detalleVenta.productos?.map((prod, idx) => {
+                                            const precio = Number(prod.precioUnitario || prod.precio || 0);
+                                            const total = Number(prod.subtotal || (prod.cantidad * precio) || 0);
+                                            return (
+                                                <tr key={idx} style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                                                    <td style={{ padding: '8px' }}>{prod.nombre}</td>
+                                                    <td style={{ padding: '8px' }}>{prod.cantidad} {prod.unidad}</td>
+                                                    <td style={{ padding: '8px' }}>{formatearMoneda(precio)}</td>
+                                                    <td style={{ padding: '8px' }}>{formatearMoneda(total)}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div className={styles.detalleRow} style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ fontWeight: 'bold' }}>Total:</span>
+                                <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '20px' }}>
+                                    {formatearMoneda(detalleVenta.total)}
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                    <div className={styles.modalBody}>
-                    <div className={styles.detalleRow} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ fontWeight: 'bold' }}>Venta #:</span>
-                        <span>{detalleVenta.id}</span>
-                    </div>
-                    <div className={styles.detalleRow} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ fontWeight: 'bold' }}>Fecha:</span>
-                        <span>{parsearFecha(detalleVenta.fecha).toLocaleDateString('es-MX')}</span>
-                    </div>
-                    <div className={styles.detalleRow} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ fontWeight: 'bold' }}>Factura:</span>
-                        {facturas.find(f => f.ventaId === detalleVenta.id) ? (
-                            <Link href="/facturas" className={styles.linkFactura} style={{color: '#3b82f6', textDecoration: 'underline'}}>
-                                {facturas.find(f => f.ventaId === detalleVenta.id).numeroFactura} ({facturas.find(f => f.ventaId === detalleVenta.id).estado}) 🔗
-                            </Link>
-                        ) : (
-                            <span style={{color: '#9ca3af'}}>Sin factura</span>
-                        )}
-                    </div>
-                    <div className={styles.detalleRow} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ fontWeight: 'bold' }}>Cliente:</span>
-                        <span>{detalleVenta.clienteNombre || detalleVenta.cliente?.nombre || 'Cliente General'}</span>
-                    </div>
-                    <div className={styles.detalleRow} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ fontWeight: 'bold' }}>Método de Pago:</span>
-                        <span style={{ textTransform: 'capitalize' }}>{detalleVenta.metodoPago || 'Contado'}</span>
-                    </div>
-                    
-                    {/* Productos */}
-                    <div className={styles.detalleProductos} style={{ marginTop: '15px' }}>
-                        <span style={{ fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>Productos:</span>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                        <thead>
-                            <tr style={{ background: 'rgba(0,0,0,0.05)', textAlign: 'left' }}>
-                            <th style={{ padding: '8px' }}>Prod.</th>
-                            <th style={{ padding: '8px' }}>Cant.</th>
-                            <th style={{ padding: '8px' }}>Precio</th>
-                            <th style={{ padding: '8px' }}>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {detalleVenta.productos?.map((prod, idx) => {
-                            const precio = Number(prod.precioUnitario || prod.precio || 0);
-                            const total = Number(prod.subtotal || (prod.cantidad * precio) || 0);
-                            return (
-                                <tr key={idx} style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                                <td style={{ padding: '8px' }}>{prod.nombre}</td>
-                                <td style={{ padding: '8px' }}>{prod.cantidad} {prod.unidad}</td>
-                                <td style={{ padding: '8px' }}>{formatearMoneda(precio)}</td>
-                                <td style={{ padding: '8px' }}>{formatearMoneda(total)}</td>
-                                </tr>
-                            );
-                            })}
-                        </tbody>
-                        </table>
-                    </div>
-                    
-                    <div className={styles.detalleRow} style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ fontWeight: 'bold' }}>Total:</span>
-                        <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '20px' }}>
-                        {formatearMoneda(detalleVenta.total)}
-                        </span>
-                    </div>
-                    </div>
-                </div>
                 </div>
             )}
 
@@ -528,1137 +531,1147 @@ export default function ClientesPage() {
                 />
             )}
 
-        <main className="main-content">
-            {/* Header */}
-            <header className={styles.pageHeader}>
-                <div className={styles.headerContent}>
-                    <div className={styles.headerLeft}>
-                        <Link href="/" className={styles.backButton}>
-                            ← Regresar
-                        </Link>
-                        <div className={styles.headerTitle}>
-                            <span className={styles.headerIcon}>👥</span>
-                            <div>
-                                <h1>Clientes</h1>
-                                <p>Base de datos de clientes</p>
+            <main className="main-content">
+                {/* Header */}
+                <header className={styles.pageHeader}>
+                    <div className={styles.headerContent}>
+                        <div className={styles.headerLeft}>
+                            <Link href="/" className={styles.backButton}>
+                                ← Regresar
+                            </Link>
+                            <div className={styles.headerTitle}>
+                                <span className={styles.headerIcon}>👥</span>
+                                <div>
+                                    <h1>Clientes</h1>
+                                    <p>Base de datos de clientes</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                        <button
-                            className={styles.addButton}
-                            onClick={() => setMostrarCalendario(true)}
-                            style={{ background: '#3b82f6', color: 'white' }}
-                        >
-                            <span>📅</span> Calendario
-                        </button>
-                        <button
-                            className={styles.addButton}
-                            onClick={() => setMostrarFormulario(true)}
-                        >
-                            <span>➕</span> Nuevo Cliente
-                        </button>
-                    </div>
-                </div>
-            </header>
-
-            {/* Estadísticas */}
-            <section className={styles.statsSection}>
-                <div className={styles.statCard}>
-                    <div className={styles.statIcon} style={{ background: '#dbeafe', color: '#3b82f6' }}>👥</div>
-                    <div className={styles.statInfo}>
-                        <span className={styles.statValue}>{totalClientes}</span>
-                        <span className={styles.statLabel}>Total Clientes</span>
-                    </div>
-                </div>
-                <div className={styles.statCard}>
-                    <div className={styles.statIcon} style={{ background: '#d1fae5', color: '#10b981' }}>✅</div>
-                    <div className={styles.statInfo}>
-                        <span className={styles.statValue}>{clientesActivos}</span>
-                        <span className={styles.statLabel}>Activos</span>
-                    </div>
-                </div>
-                <div className={styles.statCard}>
-                    <div className={styles.statIcon} style={{ background: '#fef3c7', color: '#f59e0b' }}>💳</div>
-                    <div className={styles.statInfo}>
-                        <span className={styles.statValue}>{clientesCredito}</span>
-                        <span className={styles.statLabel}>Con Crédito</span>
-                    </div>
-                </div>
-                <div className={styles.statCard}>
-                    <div className={styles.statIcon} style={{ background: '#fee2e2', color: '#ef4444' }}>💰</div>
-                    <div className={styles.statInfo}>
-                        <span className={styles.statValue}>{formatearMoneda(totalPendiente)}</span>
-                        <span className={styles.statLabel}>Por Cobrar</span>
-                    </div>
-                </div>
-            </section>
-
-            {/* Últimos Movimientos Globales */}
-            <section style={{ marginBottom: '20px', background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', border: '1px solid #e5e7eb' }}>
-                <h4 style={{ margin: '0 0 15px 0', color: '#1f2937', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>📊</span> Últimos Movimientos
-                </h4>
-                
-                {/* Botones de Filtro Globales */}
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '15px' }}>
-                    {[
-                        { key: 'todas', label: '📋 Todas', color: '#6366f1' },
-                        { key: 'ventas', label: '🛒 Ventas', color: '#3b82f6' },
-                        { key: 'facturas', label: '📄 Facturas', color: '#0ea5e9' },
-                        { key: 'abonos', label: '💰 Abonos', color: '#10b981' },
-                        { key: 'fc', label: '📄 FC (Crédito)', color: '#f59e0b' },
-                        { key: 'fa', label: '📄 FA (Contado)', color: '#8b5cf6' },
-                    ].map(btn => (
-                        <button
-                            key={btn.key}
-                            onClick={() => setFiltroMovimientosGlobal(btn.key)}
-                            style={{
-                                padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer',
-                                fontSize: '0.85rem', fontWeight: 'bold', transition: 'all 0.2s',
-                                background: filtroMovimientosGlobal === btn.key ? btn.color : '#f3f4f6',
-                                color: filtroMovimientosGlobal === btn.key ? 'white' : '#4b5563',
-                                boxShadow: filtroMovimientosGlobal === btn.key ? `0 2px 8px ${btn.color}66` : 'none'
-                            }}
-                        >
-                            {btn.label}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Lista de Movimientos */}
-                {movimientosGlobales.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '20px', color: '#6b7280', background: '#f9fafb', borderRadius: '8px' }}>
-                        📭 No hay movimientos recientes con este filtro
-                    </div>
-                ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '400px', overflowY: 'auto', paddingRight: '5px' }}>
-                        {movimientosGlobales.map((mov, i) => (
-                            <div key={`${mov.id}-${i}`} style={{
-                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                padding: '12px 16px', borderRadius: '8px', background: '#f8fafc',
-                                borderLeft: `4px solid ${mov.tipo === 'VENTA' ? '#3b82f6' : mov.tipo === 'FACTURA' ? '#0ea5e9' : '#10b981'}`,
-                                border: '1px solid #f1f5f9',
-                                borderLeftWidth: '4px'
-                            }}>
-                                <div>
-                                    <div style={{ fontWeight: 'bold', fontSize: '0.95rem', color: '#1f2937' }}>{mov.descripcion}</div>
-                                    <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>
-                                        📅 {mov.fecha} &nbsp;•&nbsp; 👤 <span style={{ color: '#4f46e5', fontWeight: '500' }}>{mov.clienteNombre}</span>
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                    <div style={{ 
-                                        fontWeight: 'bold', fontSize: '1.1rem',
-                                        color: mov.tipo === 'VENTA' ? '#1f2937' : mov.tipo === 'ABONO' ? '#10b981' : '#dc2626' 
-                                    }}>
-                                        {mov.tipo === 'ABONO' ? '+' : ''}{formatearMoneda(mov.monto)}
-                                    </div>
-                                    <button 
-                                        onClick={() => {
-                                            if (mov.tipo === 'VENTA') setDetalleVenta(mov.raw);
-                                            else setFacturaSeleccionada(mov.raw);
-                                        }}
-                                        style={{
-                                            background: '#e0e7ff', color: '#4338ca', border: 'none',
-                                            padding: '6px 12px', borderRadius: '6px', fontSize: '0.8rem',
-                                            cursor: 'pointer', fontWeight: 'bold', transition: 'background 0.2s'
-                                        }}
-                                        onMouseOver={(e) => e.target.style.background = '#c7d2fe'}
-                                        onMouseOut={(e) => e.target.style.background = '#e0e7ff'}
-                                    >
-                                        📄 Ver
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </section>
-
-            {/* Filtros y Búsqueda */}
-            <section className={styles.filtersSection}>
-                <div className={styles.searchBox}>
-                    <span className={styles.searchIcon}>🔍</span>
-                    <input
-                        type="text"
-                        placeholder="Buscar por nombre, teléfono o email..."
-                        value={busqueda}
-                        onChange={(e) => setBusqueda(e.target.value)}
-                        className={styles.searchInput}
-                    />
-                </div>
-                <div className={styles.filters}>
-                    <select
-                        value={filtroTipo}
-                        onChange={(e) => setFiltroTipo(e.target.value)}
-                        className={styles.filterSelect}
-                    >
-                        <option value="todos">Todos los tipos</option>
-                        <option value="contado">Contado</option>
-                        <option value="credito">Crédito</option>
-                    </select>
-                    <select
-                        value={filtroEstado}
-                        onChange={(e) => setFiltroEstado(e.target.value)}
-                        className={styles.filterSelect}
-                    >
-                        <option value="todos">Todos los estados</option>
-                        <option value="activo">Activos</option>
-                        <option value="atrasado">Atrasados</option>
-                        <option value="inactivo">Inactivos</option>
-                    </select>
-                </div>
-            </section>
-
-            {/* Tabla de Clientes */}
-            <section className={styles.tableSection}>
-                <div className={styles.tableContainer}>
-                    <table className={styles.table}>
-                        <thead>
-                            <tr>
-                                <th>Cliente</th>
-                                <th>Contacto</th>
-                                <th>Tipo</th>
-                                <th>Estado</th>
-                                <th>Saldo Pendiente</th>
-                                <th>Última Compra</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {clientesFiltrados.length === 0 ? (
-                                <tr>
-                                    <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-                                        {clientes.length === 0 
-                                            ? '📭 No hay clientes registrados. ¡Agrega el primero!' 
-                                            : '🔍 No se encontraron clientes con esos filtros'}
-                                    </td>
-                                </tr>
-                            ) : (
-                                clientesFiltrados.map((cliente) => (
-                                    <tr key={cliente.id}>
-                                        <td>
-                                            <div className={styles.clienteInfo}>
-                                                <div className={styles.clienteAvatar}
-                                                     onClick={() => cliente.avatarURL && setModalImagen({ show: true, url: cliente.avatarURL })}
-                                                     style={{ cursor: cliente.avatarURL ? 'pointer' : 'default' }}
-                                                >
-                                                    {cliente.avatarURL ? (
-                                                        <img src={cliente.avatarURL} alt={cliente.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-                                                    ) : (
-                                                        cliente.nombre.charAt(0)
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <span className={styles.clienteNombre}>{cliente.nombre}</span>
-                                                    <span className={styles.clienteDireccion}>{cliente.direccion}</span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div className={styles.contactoInfo}>
-                                                <span>📞 {cliente.telefono}</span>
-                                                <span>✉️ {cliente.email || 'N/A'}</span>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span className={`${styles.badge} ${styles[cliente.tipoCliente]}`}>
-                                                {cliente.tipoCliente === 'credito' ? '💳 Crédito' : '💵 Contado'}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span className={`${styles.statusBadge} ${styles[cliente.estado]}`}>
-                                                {cliente.estado === 'activo' && '🟢 Activo'}
-                                                {cliente.estado === 'atrasado' && '🔴 Atrasado'}
-                                                {cliente.estado === 'inactivo' && '⚪ Inactivo'}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span className={cliente.saldoPendiente > 0 ? styles.saldoPendiente : styles.saldoCero}>
-                                                {formatearMoneda(cliente.saldoPendiente || 0)}
-                                            </span>
-                                        </td>
-                                        <td>{cliente.ultimaCompra || 'Sin compras'}</td>
-                                        <td>
-                                            <div className={styles.acciones}>
-                                                <button
-                                                    className={styles.btnActionWithText}
-                                                    onClick={() => verExpediente(cliente)}
-                                                    title="Ver expediente"
-                                                >
-                                                    📋 Expediente
-                                                </button>
-                                                <button 
-                                                    className={`${styles.btnActionWithText} ${styles.btnDeleteWithText}`} 
-                                                    title="Eliminar"
-                                                    onClick={() => iniciarEliminacion(cliente)}
-                                                >
-                                                    🗑️ Eliminar
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            {/* Modal de Expediente */}
-            {mostrarModal && clienteSeleccionado && (
-                <div className={styles.modalOverlay} onClick={() => setMostrarModal(false)}>
-                    <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-                        <div className={styles.modalHeader}>
-                            <h2>📋 Expediente del Cliente</h2>
-                            <button className={styles.closeButton} onClick={() => setMostrarModal(false)}>
-                                ✕
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <button
+                                className={styles.addButton}
+                                onClick={() => setMostrarCalendario(true)}
+                                style={{ background: '#3b82f6', color: 'white' }}
+                            >
+                                <span>📅</span> Calendario
+                            </button>
+                            <button
+                                className={styles.addButton}
+                                onClick={() => setMostrarFormulario(true)}
+                            >
+                                <span>➕</span> Nuevo Cliente
                             </button>
                         </div>
-                        <div className={styles.modalBody}>
-                            <div className={styles.expedienteHeader}>
-                                <div className={styles.avatarLarge}
-                                     onClick={() => clienteSeleccionado.avatarURL && setModalImagen({ show: true, url: clienteSeleccionado.avatarURL })}
-                                     style={{ cursor: clienteSeleccionado.avatarURL ? 'pointer' : 'default', overflow: 'hidden' }}
-                                >
-                                    {clienteSeleccionado.avatarURL ? (
-                                        <img src={clienteSeleccionado.avatarURL} alt={clienteSeleccionado.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    ) : (
-                                        clienteSeleccionado.nombre.charAt(0)
-                                    )}
-                                </div>
-                                <div>
-                                    <h3>{clienteSeleccionado.nombre}</h3>
-                                    <p>Cliente desde {clienteSeleccionado.fechaRegistro || '2024'}</p>
-                                </div>
-                            </div>
+                    </div>
+                </header>
 
-                            <div className={styles.expedienteSections}>
-                                <div className={styles.expedienteSection}>
-                                    <h4>📱 Información de Contacto</h4>
-                                    <div className={styles.infoGrid}>
-                                        <div>
-                                            <label>Teléfono</label>
-                                            <p>{clienteSeleccionado.telefono}</p>
+                {/* Estadísticas */}
+                <section className={styles.statsSection}>
+                    <div className={styles.statCard}>
+                        <div className={styles.statIcon} style={{ background: '#dbeafe', color: '#3b82f6' }}>👥</div>
+                        <div className={styles.statInfo}>
+                            <span className={styles.statValue}>{totalClientes}</span>
+                            <span className={styles.statLabel}>Total Clientes</span>
+                        </div>
+                    </div>
+                    <div className={styles.statCard}>
+                        <div className={styles.statIcon} style={{ background: '#d1fae5', color: '#10b981' }}>✅</div>
+                        <div className={styles.statInfo}>
+                            <span className={styles.statValue}>{clientesActivos}</span>
+                            <span className={styles.statLabel}>Activos</span>
+                        </div>
+                    </div>
+                    <div className={styles.statCard}>
+                        <div className={styles.statIcon} style={{ background: '#fef3c7', color: '#f59e0b' }}>💳</div>
+                        <div className={styles.statInfo}>
+                            <span className={styles.statValue}>{clientesCredito}</span>
+                            <span className={styles.statLabel}>Con Crédito</span>
+                        </div>
+                    </div>
+                    <div className={styles.statCard}>
+                        <div className={styles.statIcon} style={{ background: '#fee2e2', color: '#ef4444' }}>💰</div>
+                        <div className={styles.statInfo}>
+                            <span className={styles.statValue}>{formatearMoneda(totalPendiente)}</span>
+                            <span className={styles.statLabel}>Por Cobrar</span>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Últimos Movimientos Globales */}
+                <section style={{ marginBottom: '20px', background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', border: '1px solid #e5e7eb' }}>
+                    <h4 style={{ margin: '0 0 15px 0', color: '#1f2937', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>📊</span> Últimos Movimientos
+                    </h4>
+
+                    {/* Botones de Filtro Globales */}
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '15px' }}>
+                        {[
+                            { key: 'todas', label: '📋 Todas', color: '#6366f1' },
+                            { key: 'ventas', label: '🛒 Ventas', color: '#3b82f6' },
+                            { key: 'facturas', label: '📄 Facturas', color: '#0ea5e9' },
+                            { key: 'abonos', label: '💰 Abonos', color: '#10b981' },
+                            { key: 'fc', label: '📄 FC (Crédito)', color: '#f59e0b' },
+                            { key: 'fa', label: '📄 FA (Contado)', color: '#8b5cf6' },
+                        ].map(btn => (
+                            <button
+                                key={btn.key}
+                                onClick={() => setFiltroMovimientosGlobal(btn.key)}
+                                style={{
+                                    padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer',
+                                    fontSize: '0.85rem', fontWeight: 'bold', transition: 'all 0.2s',
+                                    background: filtroMovimientosGlobal === btn.key ? btn.color : '#f3f4f6',
+                                    color: filtroMovimientosGlobal === btn.key ? 'white' : '#4b5563',
+                                    boxShadow: filtroMovimientosGlobal === btn.key ? `0 2px 8px ${btn.color}66` : 'none'
+                                }}
+                            >
+                                {btn.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Lista de Movimientos */}
+                    {movimientosGlobales.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '20px', color: '#6b7280', background: '#f9fafb', borderRadius: '8px' }}>
+                            📭 No hay movimientos recientes con este filtro
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '400px', overflowY: 'auto', paddingRight: '5px' }}>
+                            {movimientosGlobales.map((mov, i) => (
+                                <div key={`${mov.id}-${i}`} style={{
+                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                    padding: '12px 16px', borderRadius: '8px', background: '#f8fafc',
+                                    borderLeft: `4px solid ${mov.tipo === 'VENTA' ? '#3b82f6' : mov.tipo === 'FACTURA' ? '#0ea5e9' : '#10b981'}`,
+                                    border: '1px solid #f1f5f9',
+                                    borderLeftWidth: '4px'
+                                }}>
+                                    <div>
+                                        <div style={{ fontWeight: 'bold', fontSize: '0.95rem', color: '#1f2937' }}>{mov.descripcion}</div>
+                                        <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>
+                                            📅 {mov.fecha} &nbsp;•&nbsp; 👤 <span style={{ color: '#4f46e5', fontWeight: '500' }}>{mov.clienteNombre}</span>
                                         </div>
-                                        <div>
-                                            <label>Email</label>
-                                            <p>{clienteSeleccionado.email || 'No registrado'}</p>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                        <div style={{
+                                            fontWeight: 'bold', fontSize: '1.1rem',
+                                            color: mov.tipo === 'VENTA' ? '#1f2937' : mov.tipo === 'ABONO' ? '#10b981' : '#dc2626'
+                                        }}>
+                                            {mov.tipo === 'ABONO' ? '+' : ''}{formatearMoneda(mov.monto)}
                                         </div>
-                                        <div>
-                                            <label>Dirección Fiscal</label>
-                                            <p>
-                                                {clienteSeleccionado.direccion}
-                                                {clienteSeleccionado.ciudad && <span style={{display:'block', fontSize:'0.9em', color:'#666'}}>{clienteSeleccionado.ciudad} {clienteSeleccionado.cp ? `CP: ${clienteSeleccionado.cp}` : ''}</span>}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <label>Dirección de Entrega</label>
-                                            <p>{clienteSeleccionado.direccionEntrega || 'Misma que fiscal'}</p>
-                                        </div>
-                                        {clienteSeleccionado.rfc && (
-                                            <div>
-                                                <label>RFC / CURP</label>
-                                                <p>{clienteSeleccionado.rfc}</p>
-                                            </div>
+                                        <button
+                                            onClick={() => {
+                                                if (mov.tipo === 'VENTA') setDetalleVenta(mov.raw);
+                                                else setFacturaSeleccionada(mov.raw);
+                                            }}
+                                            style={{
+                                                background: '#e0e7ff', color: '#4338ca', border: 'none',
+                                                padding: '6px 12px', borderRadius: '6px', fontSize: '0.8rem',
+                                                cursor: 'pointer', fontWeight: 'bold', transition: 'background 0.2s'
+                                            }}
+                                            onMouseOver={(e) => e.target.style.background = '#c7d2fe'}
+                                            onMouseOut={(e) => e.target.style.background = '#e0e7ff'}
+                                        >
+                                            📄 Ver
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </section>
+
+                {/* Filtros y Búsqueda */}
+                <section className={styles.filtersSection}>
+                    <div className={styles.searchBox}>
+                        <span className={styles.searchIcon}>🔍</span>
+                        <input
+                            type="text"
+                            placeholder="Buscar por nombre, teléfono o email..."
+                            value={busqueda}
+                            onChange={(e) => setBusqueda(e.target.value)}
+                            className={styles.searchInput}
+                        />
+                    </div>
+                    <div className={styles.filters}>
+                        <select
+                            value={filtroTipo}
+                            onChange={(e) => setFiltroTipo(e.target.value)}
+                            className={styles.filterSelect}
+                        >
+                            <option value="todos">Todos los tipos</option>
+                            <option value="contado">Contado</option>
+                            <option value="credito">Crédito</option>
+                        </select>
+                        <select
+                            value={filtroEstado}
+                            onChange={(e) => setFiltroEstado(e.target.value)}
+                            className={styles.filterSelect}
+                        >
+                            <option value="todos">Todos los estados</option>
+                            <option value="activo">Activos</option>
+                            <option value="atrasado">Atrasados</option>
+                            <option value="inactivo">Inactivos</option>
+                        </select>
+                    </div>
+                </section>
+
+                {/* Tabla de Clientes */}
+                <section className={styles.tableSection}>
+                    <div className={styles.tableContainer}>
+                        <table className={styles.table}>
+                            <thead>
+                                <tr>
+                                    <th>Cliente</th>
+                                    <th>Contacto</th>
+                                    <th>Tipo</th>
+                                    <th>Estado</th>
+                                    <th>Saldo Pendiente</th>
+                                    <th>Última Compra</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {clientesFiltrados.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                                            {clientes.length === 0
+                                                ? '📭 No hay clientes registrados. ¡Agrega el primero!'
+                                                : '🔍 No se encontraron clientes con esos filtros'}
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    clientesFiltrados.map((cliente) => (
+                                        <tr key={cliente.id}>
+                                            <td>
+                                                <div className={styles.clienteInfo}>
+                                                    <div className={styles.clienteAvatar}
+                                                        onClick={() => cliente.avatarURL && setModalImagen({ show: true, url: cliente.avatarURL })}
+                                                        style={{ cursor: cliente.avatarURL ? 'pointer' : 'default' }}
+                                                    >
+                                                        {cliente.avatarURL ? (
+                                                            <img src={cliente.avatarURL} alt={cliente.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                                                        ) : (
+                                                            cliente.nombre.charAt(0)
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <span className={styles.clienteNombre}>{cliente.nombre}</span>
+                                                        <span className={styles.clienteDireccion}>{cliente.direccion}</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className={styles.contactoInfo}>
+                                                    <span>📞 {cliente.telefono}</span>
+                                                    <span>✉️ {cliente.email || 'N/A'}</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span className={`${styles.badge} ${styles[cliente.tipoCliente]}`}>
+                                                    {cliente.tipoCliente === 'credito' ? '💳 Crédito' : '💵 Contado'}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className={`${styles.statusBadge} ${styles[cliente.estado]}`}>
+                                                    {cliente.estado === 'activo' && '🟢 Activo'}
+                                                    {cliente.estado === 'atrasado' && '🔴 Atrasado'}
+                                                    {cliente.estado === 'inactivo' && '⚪ Inactivo'}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className={cliente.saldoPendiente > 0 ? styles.saldoPendiente : styles.saldoCero}>
+                                                    {formatearMoneda(cliente.saldoPendiente || 0)}
+                                                </span>
+                                            </td>
+                                            <td>{cliente.ultimaCompra || 'Sin compras'}</td>
+                                            <td>
+                                                <div className={styles.acciones}>
+                                                    <button
+                                                        className={styles.btnActionWithText}
+                                                        onClick={() => verExpediente(cliente)}
+                                                        title="Ver expediente"
+                                                    >
+                                                        📋 Expediente
+                                                    </button>
+                                                    <button
+                                                        className={`${styles.btnActionWithText} ${styles.btnDeleteWithText}`}
+                                                        title="Eliminar"
+                                                        onClick={() => iniciarEliminacion(cliente)}
+                                                    >
+                                                        🗑️ Eliminar
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                {/* Modal de Expediente */}
+                {mostrarModal && clienteSeleccionado && (
+                    <div className={styles.modalOverlay} onClick={() => setMostrarModal(false)}>
+                        <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+                            <div className={styles.modalHeader}>
+                                <h2>📋 Expediente del Cliente</h2>
+                                <button className={styles.closeButton} onClick={() => setMostrarModal(false)}>
+                                    ✕
+                                </button>
+                            </div>
+                            <div className={styles.modalBody}>
+                                <div className={styles.expedienteHeader}>
+                                    <div className={styles.avatarLarge}
+                                        onClick={() => clienteSeleccionado.avatarURL && setModalImagen({ show: true, url: clienteSeleccionado.avatarURL })}
+                                        style={{ cursor: clienteSeleccionado.avatarURL ? 'pointer' : 'default', overflow: 'hidden' }}
+                                    >
+                                        {clienteSeleccionado.avatarURL ? (
+                                            <img src={clienteSeleccionado.avatarURL} alt={clienteSeleccionado.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            clienteSeleccionado.nombre.charAt(0)
                                         )}
+                                    </div>
+                                    <div>
+                                        <h3>{clienteSeleccionado.nombre}</h3>
+                                        <p>Cliente desde {clienteSeleccionado.fechaRegistro || '2024'}</p>
                                     </div>
                                 </div>
 
-                                {/* 💰 ESTADO DE CUENTA - MISMO FORMATO QUE PROVEEDORES */}
-                                <div className={styles.expedienteSection} style={{ gridColumn: '1 / -1', borderLeft: '4px solid #f59e0b' }}>
-                                    <h4 style={{ color: '#d97706' }}>💰 Estado de Cuenta</h4>
-                                    
-                                    {clienteSeleccionado.tipoCliente === 'credito' && (() => {
-                                        const limite = Number(clienteSeleccionado.limiteCredito) || 50000;
-                                        const utilizado = Number(clienteSeleccionado.saldoPendiente) || 0;
-                                        const disponible = Math.max(0, limite - utilizado);
-                                        const porcentaje = limite > 0 ? Math.min(100, (utilizado / limite) * 100) : 0;
-                                        const colorBarra = porcentaje > 80 ? '#ef4444' : porcentaje > 50 ? '#f59e0b' : '#10b981';
-                                        return (
-                                            <>
-                                                {/* Métricas numéricas - GRID 3 COLUMNAS como proveedores */}
-                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '15px' }}>
-                                                    <div style={{ textAlign: 'center', padding: '10px', background: '#f0f9ff', borderRadius: '8px' }}>
-                                                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '2px' }}>Límite Total</div>
-                                                        <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1e40af' }}>{formatearMoneda(limite)}</div>
-                                                    </div>
-                                                    <div style={{ textAlign: 'center', padding: '10px', background: '#fef2f2', borderRadius: '8px' }}>
-                                                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '2px' }}>Utilizado</div>
-                                                        <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#ef4444' }}>{formatearMoneda(utilizado)}</div>
-                                                    </div>
-                                                    <div style={{ textAlign: 'center', padding: '10px', background: '#f0fdf4', borderRadius: '8px' }}>
-                                                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '2px' }}>Disponible</div>
-                                                        <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#10b981' }}>{formatearMoneda(disponible)}</div>
-                                                    </div>
+                                <div className={styles.expedienteSections}>
+                                    <div className={styles.expedienteSection}>
+                                        <h4>📱 Información de Contacto</h4>
+                                        <div className={styles.infoGrid}>
+                                            <div>
+                                                <label>Teléfono</label>
+                                                <p>{clienteSeleccionado.telefono}</p>
+                                            </div>
+                                            <div>
+                                                <label>Email</label>
+                                                <p>{clienteSeleccionado.email || 'No registrado'}</p>
+                                            </div>
+                                            <div>
+                                                <label>Dirección Fiscal</label>
+                                                <p>
+                                                    {clienteSeleccionado.direccion}
+                                                    {clienteSeleccionado.ciudad && <span style={{ display: 'block', fontSize: '0.9em', color: '#666' }}>{clienteSeleccionado.ciudad} {clienteSeleccionado.cp ? `CP: ${clienteSeleccionado.cp}` : ''}</span>}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <label>Dirección de Entrega</label>
+                                                <p>{clienteSeleccionado.direccionEntrega || 'Misma que fiscal'}</p>
+                                            </div>
+                                            {clienteSeleccionado.rfc && (
+                                                <div>
+                                                    <label>RFC / CURP</label>
+                                                    <p>{clienteSeleccionado.rfc}</p>
                                                 </div>
-                                                {/* Barra de progreso dual - IDÉNTICA a proveedores */}
-                                                <div style={{ background: '#e5e7eb', borderRadius: '10px', height: '18px', overflow: 'hidden', position: 'relative' }}>
-                                                    <div style={{
-                                                        width: `${porcentaje}%`, height: '100%',
-                                                        background: `linear-gradient(90deg, ${colorBarra}, ${colorBarra}dd)`,
-                                                        borderRadius: '10px', transition: 'width 0.5s ease',
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* 💰 ESTADO DE CUENTA - MISMO FORMATO QUE PROVEEDORES */}
+                                    <div className={styles.expedienteSection} style={{ gridColumn: '1 / -1', borderLeft: '4px solid #f59e0b' }}>
+                                        <h4 style={{ color: '#d97706' }}>💰 Estado de Cuenta</h4>
+
+                                        {clienteSeleccionado.tipoCliente === 'credito' && (() => {
+                                            const storedLimit = Number(clienteSeleccionado.limiteCredito);
+                                            const hasLimit = storedLimit > 0;
+                                            const limite = hasLimit ? storedLimit : 0;
+                                            const utilizado = Number(clienteSeleccionado.saldoPendiente) || 0;
+                                            const disponible = hasLimit ? Math.max(0, limite - utilizado) : 0;
+                                            const porcentaje = hasLimit ? Math.min(100, (utilizado / limite) * 100) : 0;
+                                            const colorBarra = porcentaje > 80 ? '#ef4444' : porcentaje > 50 ? '#f59e0b' : '#10b981';
+                                            return (
+                                                <>
+                                                    {/* Métricas numéricas - GRID 3 COLUMNAS como proveedores */}
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '15px' }}>
+                                                        <div style={{ textAlign: 'center', padding: '10px', background: '#f0f9ff', borderRadius: '8px' }}>
+                                                            <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '2px' }}>Límite Total</div>
+                                                            <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#1e40af' }}>
+                                                                {hasLimit ? formatearMoneda(limite) : 'Sin límite'}
+                                                            </div>
+                                                        </div>
+                                                        <div style={{ textAlign: 'center', padding: '10px', background: '#fef2f2', borderRadius: '8px' }}>
+                                                            <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '2px' }}>Utilizado</div>
+                                                            <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#ef4444' }}>{formatearMoneda(utilizado)}</div>
+                                                        </div>
+                                                        <div style={{ textAlign: 'center', padding: '10px', background: '#f0fdf4', borderRadius: '8px' }}>
+                                                            <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '2px' }}>Disponible</div>
+                                                            <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#10b981' }}>
+                                                                {hasLimit ? formatearMoneda(disponible) : 'Ilimitado'}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {/* Barra de progreso dual - Solo se muestra si hay límite */}
+                                                    {hasLimit && (
+                                                        <>
+                                                            <div style={{ background: '#e5e7eb', borderRadius: '10px', height: '18px', overflow: 'hidden', position: 'relative' }}>
+                                                                <div style={{
+                                                                    width: `${porcentaje}%`, height: '100%',
+                                                                    background: `linear-gradient(90deg, ${colorBarra}, ${colorBarra}dd)`,
+                                                                    borderRadius: '10px', transition: 'width 0.5s ease',
+                                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                }}>
+                                                                    {porcentaje > 15 && (
+                                                                        <span style={{ color: 'white', fontSize: '0.65rem', fontWeight: '700' }}>{porcentaje.toFixed(0)}%</span>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '0.7rem', color: '#9ca3af' }}>
+                                                                <span>0%</span>
+                                                                <span>{porcentaje.toFixed(0)}% utilizado</span>
+                                                                <span>100%</span>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </>
+                                            );
+                                        })()}
+
+                                        {/* Para clientes de contado, solo saldo */}
+                                        {clienteSeleccionado.tipoCliente !== 'credito' && (
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div>
+                                                    <span style={{ fontSize: '0.9rem', color: '#666' }}>Saldo Pendiente:</span>
+                                                    <h2 style={{
+                                                        color: (clienteSeleccionado.saldoPendiente || 0) > 0 ? '#ef4444' : '#10b981',
+                                                        margin: '5px 0'
                                                     }}>
-                                                        {porcentaje > 15 && (
-                                                            <span style={{ color: 'white', fontSize: '0.65rem', fontWeight: '700' }}>{porcentaje.toFixed(0)}%</span>
-                                                        )}
+                                                        {formatearMoneda(clienteSeleccionado.saldoPendiente || 0)}
+                                                    </h2>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div style={{ display: 'flex', gap: '10px', marginTop: '10px', fontSize: '0.85rem', color: '#6b7280' }}>
+                                            <span>💳 {clienteSeleccionado.tipoCliente === 'credito' ? `Crédito (${clienteSeleccionado.diasCredito || 0} días)` : 'Contado'}</span>
+                                            <span>•</span>
+                                            <span>Última compra: {clienteSeleccionado.ultimaCompra || 'Sin compras'}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* ⚠️ ALERTAS DE ATRASO */}
+                                    {(() => {
+                                        const facturasCliente = facturas.filter(f => {
+                                            const cliCode = `CLI-${String(clienteSeleccionado.id).padStart(3, '0')}`;
+                                            return (f.cliente?.codigo === cliCode || f.clienteId === clienteSeleccionado.id) && f.estado === 'pendiente' && f.fechaVencimiento;
+                                        });
+                                        const hoy = new Date();
+                                        hoy.setHours(0, 0, 0, 0);
+                                        const facturasVencidas = facturasCliente.filter(f => {
+                                            const [a, m, d] = (f.fechaVencimiento || '').split('-');
+                                            const fechaVenc = new Date(parseInt(a), parseInt(m) - 1, parseInt(d));
+                                            return fechaVenc < hoy;
+                                        }).map(f => {
+                                            const [a, m, d] = f.fechaVencimiento.split('-');
+                                            const fechaVenc = new Date(parseInt(a), parseInt(m) - 1, parseInt(d));
+                                            const diasAtraso = Math.ceil((hoy - fechaVenc) / (1000 * 60 * 60 * 24));
+                                            return { ...f, diasAtraso };
+                                        });
+
+                                        if (facturasVencidas.length === 0) return null;
+                                        return (
+                                            <div className={styles.expedienteSection} style={{ gridColumn: '1 / -1' }}>
+                                                <div style={{ background: '#fef2f2', border: '2px solid #fca5a5', borderRadius: '10px', padding: '14px' }}>
+                                                    <h4 style={{ color: '#dc2626', marginBottom: '10px', fontSize: '1rem' }}>⚠️ FACTURAS CON ATRASO</h4>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                        {facturasVencidas.map(f => (
+                                                            <div key={f.id} style={{
+                                                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                                background: 'white', padding: '10px 14px', borderRadius: '6px', borderLeft: '4px solid #dc2626',
+                                                                cursor: 'pointer'
+                                                            }} onClick={() => setFacturaSeleccionada(f)}>
+                                                                <div>
+                                                                    <div style={{ fontWeight: 'bold', color: '#1f2937' }}>{f.numeroFactura}</div>
+                                                                    <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>Venció: {f.fechaVencimiento}</div>
+                                                                </div>
+                                                                <div style={{ textAlign: 'right' }}>
+                                                                    <div style={{ fontWeight: 'bold', color: '#dc2626', fontSize: '1.1rem' }}>{f.diasAtraso} días de atraso</div>
+                                                                    <div style={{ fontSize: '0.85rem', color: '#1f2937' }}>{formatearMoneda(f.total)}</div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
                                                     </div>
                                                 </div>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '0.7rem', color: '#9ca3af' }}>
-                                                    <span>0%</span>
-                                                    <span>{porcentaje.toFixed(0)}% utilizado</span>
-                                                    <span>100%</span>
-                                                </div>
-                                            </>
+                                            </div>
                                         );
                                     })()}
 
-                                    {/* Para clientes de contado, solo saldo */}
-                                    {clienteSeleccionado.tipoCliente !== 'credito' && (
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div>
-                                                <span style={{ fontSize: '0.9rem', color: '#666' }}>Saldo Pendiente:</span>
-                                                <h2 style={{ 
-                                                    color: (clienteSeleccionado.saldoPendiente || 0) > 0 ? '#ef4444' : '#10b981',
-                                                    margin: '5px 0'
-                                                }}>
-                                                    {formatearMoneda(clienteSeleccionado.saldoPendiente || 0)}
-                                                </h2>
-                                            </div>
+                                    {/* 📊 HISTORIAL COMPLETO POR MES CON FILTROS POR BOTÓN */}
+                                    <div className={styles.expedienteSection} style={{ gridColumn: '1 / -1' }}>
+                                        <h4>📊 Historial Completo de Movimientos</h4>
+
+                                        {/* Botones de Filtro */}
+                                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px', marginBottom: '12px' }}>
+                                            {[
+                                                { key: 'todas', label: '📋 Todas', color: '#6366f1' },
+                                                { key: 'ventas', label: '🛒 Ventas', color: '#3b82f6' },
+                                                { key: 'facturas', label: '📄 Facturas', color: '#0ea5e9' },
+                                                { key: 'abonos', label: '💰 Abonos', color: '#10b981' },
+                                                { key: 'fc', label: '📄 FC (Crédito)', color: '#f59e0b' },
+                                                { key: 'fa', label: '📄 FA (Contado)', color: '#8b5cf6' },
+                                            ].map(btn => (
+                                                <button
+                                                    key={btn.key}
+                                                    onClick={() => setFiltroHistorial(btn.key)}
+                                                    style={{
+                                                        padding: '8px 16px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: '600',
+                                                        border: filtroHistorial === btn.key ? `2px solid ${btn.color}` : '1px solid #d1d5db',
+                                                        background: filtroHistorial === btn.key ? `${btn.color}15` : 'white',
+                                                        color: filtroHistorial === btn.key ? btn.color : '#374151',
+                                                        cursor: 'pointer', transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    {btn.label}
+                                                </button>
+                                            ))}
                                         </div>
-                                    )}
 
-                                    <div style={{ display: 'flex', gap: '10px', marginTop: '10px', fontSize: '0.85rem', color: '#6b7280' }}>
-                                        <span>💳 {clienteSeleccionado.tipoCliente === 'credito' ? `Crédito (${clienteSeleccionado.diasCredito || 0} días)` : 'Contado'}</span>
-                                        <span>•</span>
-                                        <span>Última compra: {clienteSeleccionado.ultimaCompra || 'Sin compras'}</span>
-                                    </div>
-                                </div>
+                                        <div style={{
+                                            background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px',
+                                            padding: '12px', maxHeight: '500px', overflowY: 'auto'
+                                        }}>
+                                            {(() => {
+                                                const cliCode = `CLI-${String(clienteSeleccionado.id).padStart(3, '0')}`;
 
-                                {/* ⚠️ ALERTAS DE ATRASO */}
-                                {(() => {
-                                    const facturasCliente = facturas.filter(f => {
-                                        const cliCode = `CLI-${String(clienteSeleccionado.id).padStart(3, '0')}`;
-                                        return (f.cliente?.codigo === cliCode || f.clienteId === clienteSeleccionado.id) && f.estado === 'pendiente' && f.fechaVencimiento;
-                                    });
-                                    const hoy = new Date();
-                                    hoy.setHours(0,0,0,0);
-                                    const facturasVencidas = facturasCliente.filter(f => {
-                                        const [a, m, d] = (f.fechaVencimiento || '').split('-');
-                                        const fechaVenc = new Date(parseInt(a), parseInt(m) - 1, parseInt(d));
-                                        return fechaVenc < hoy;
-                                    }).map(f => {
-                                        const [a, m, d] = f.fechaVencimiento.split('-');
-                                        const fechaVenc = new Date(parseInt(a), parseInt(m) - 1, parseInt(d));
-                                        const diasAtraso = Math.ceil((hoy - fechaVenc) / (1000 * 60 * 60 * 24));
-                                        return { ...f, diasAtraso };
-                                    });
+                                                // Recopilar TODOS los movimientos del cliente
+                                                const facturasCliente = facturas.filter(f =>
+                                                    f.cliente?.codigo === cliCode || f.clienteId === clienteSeleccionado.id
+                                                );
 
-                                    if (facturasVencidas.length === 0) return null;
-                                    return (
-                                        <div className={styles.expedienteSection} style={{ gridColumn: '1 / -1' }}>
-                                            <div style={{ background: '#fef2f2', border: '2px solid #fca5a5', borderRadius: '10px', padding: '14px' }}>
-                                                <h4 style={{ color: '#dc2626', marginBottom: '10px', fontSize: '1rem' }}>⚠️ FACTURAS CON ATRASO</h4>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                    {facturasVencidas.map(f => (
-                                                        <div key={f.id} style={{
-                                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                                            background: 'white', padding: '10px 14px', borderRadius: '6px', borderLeft: '4px solid #dc2626',
-                                                            cursor: 'pointer'
-                                                        }} onClick={() => setFacturaSeleccionada(f)}>
-                                                            <div>
-                                                                <div style={{ fontWeight: 'bold', color: '#1f2937' }}>{f.numeroFactura}</div>
-                                                                <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>Venció: {f.fechaVencimiento}</div>
-                                                            </div>
-                                                            <div style={{ textAlign: 'right' }}>
-                                                                <div style={{ fontWeight: 'bold', color: '#dc2626', fontSize: '1.1rem' }}>{f.diasAtraso} días de atraso</div>
-                                                                <div style={{ fontSize: '0.85rem', color: '#1f2937' }}>{formatearMoneda(f.total)}</div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })()}
+                                                const ventasCliente = ventasData.filter(v => v.clienteId === clienteSeleccionado.id)
+                                                    .map(v => ({
+                                                        tipo: 'VENTA', fecha: v.fecha, monto: v.total, metodo: v.metodoPago,
+                                                        id: v.id, raw: v,
+                                                        descripcion: `Compra - ${v.productos?.map(p => p.nombre).join(', ') || 'Sin productos'}`,
+                                                        folio: facturas.find(f => f.ventaId === v.id)?.numeroFactura || ''
+                                                    }));
 
-                                {/* 📊 HISTORIAL COMPLETO POR MES CON FILTROS POR BOTÓN */}
-                                <div className={styles.expedienteSection} style={{ gridColumn: '1 / -1' }}>
-                                    <h4>📊 Historial Completo de Movimientos</h4>
-
-                                    {/* Botones de Filtro */}
-                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px', marginBottom: '12px' }}>
-                                        {[
-                                            { key: 'todas', label: '📋 Todas', color: '#6366f1' },
-                                            { key: 'ventas', label: '🛒 Ventas', color: '#3b82f6' },
-                                            { key: 'facturas', label: '📄 Facturas', color: '#0ea5e9' },
-                                            { key: 'abonos', label: '💰 Abonos', color: '#10b981' },
-                                            { key: 'fc', label: '📄 FC (Crédito)', color: '#f59e0b' },
-                                            { key: 'fa', label: '📄 FA (Contado)', color: '#8b5cf6' },
-                                        ].map(btn => (
-                                            <button
-                                                key={btn.key}
-                                                onClick={() => setFiltroHistorial(btn.key)}
-                                                style={{
-                                                    padding: '8px 16px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: '600',
-                                                    border: filtroHistorial === btn.key ? `2px solid ${btn.color}` : '1px solid #d1d5db',
-                                                    background: filtroHistorial === btn.key ? `${btn.color}15` : 'white',
-                                                    color: filtroHistorial === btn.key ? btn.color : '#374151',
-                                                    cursor: 'pointer', transition: 'all 0.2s'
-                                                }}
-                                            >
-                                                {btn.label}
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    <div style={{
-                                        background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', 
-                                        padding: '12px', maxHeight: '500px', overflowY: 'auto'
-                                    }}>
-                                        {(() => {
-                                            const cliCode = `CLI-${String(clienteSeleccionado.id).padStart(3, '0')}`;
-                                            
-                                            // Recopilar TODOS los movimientos del cliente
-                                            const facturasCliente = facturas.filter(f => 
-                                                f.cliente?.codigo === cliCode || f.clienteId === clienteSeleccionado.id
-                                            );
-                                            
-                                            const ventasCliente = ventasData.filter(v => v.clienteId === clienteSeleccionado.id)
-                                                .map(v => ({
-                                                    tipo: 'VENTA', fecha: v.fecha, monto: v.total, metodo: v.metodoPago,
-                                                    id: v.id, raw: v,
-                                                    descripcion: `Compra - ${v.productos?.map(p => p.nombre).join(', ') || 'Sin productos'}`,
-                                                    folio: facturas.find(f => f.ventaId === v.id)?.numeroFactura || ''
-                                                }));
-                                            
-                                            const facturasMovs = facturasCliente.map(f => ({
-                                                tipo: 'FACTURA', fecha: f.fecha || f.fechaEmision, monto: f.total, metodo: f.metodoPago,
-                                                id: f.id, raw: f,
-                                                descripcion: `${f.numeroFactura || 'Sin folio'} - ${f.tipoFactura === 'abono' ? 'Nota de Abono' : f.tipoFactura === 'credito' ? 'Crédito' : 'Contado'}`,
-                                                folio: f.numeroFactura || '',
-                                                tipoFactura: f.tipoFactura
-                                            }));
-                                            
-                                            const abonosCliente = abonosData.filter(a => a.clienteId === clienteSeleccionado.id)
-                                                .map(a => ({
-                                                    tipo: 'ABONO', fecha: a.fecha, monto: a.monto, metodo: a.metodoPago,
-                                                    id: a.id, raw: a,
-                                                    descripcion: `Abono ${a.numeroAbono || ''} - ${a.metodoPago === 'efectivo' ? 'Efectivo' : a.metodoPago === 'tarjeta' ? 'Tarjeta' : 'Transferencia'}`,
-                                                    folio: a.numeroFactura || a.numeroAbono || ''
+                                                const facturasMovs = facturasCliente.map(f => ({
+                                                    tipo: 'FACTURA', fecha: f.fecha || f.fechaEmision, monto: f.total, metodo: f.metodoPago,
+                                                    id: f.id, raw: f,
+                                                    descripcion: `${f.numeroFactura || 'Sin folio'} - ${f.tipoFactura === 'abono' ? 'Nota de Abono' : f.tipoFactura === 'credito' ? 'Crédito' : 'Contado'}`,
+                                                    folio: f.numeroFactura || '',
+                                                    tipoFactura: f.tipoFactura
                                                 }));
 
-                                            let movimientos = [...ventasCliente, ...facturasMovs, ...abonosCliente];
+                                                const abonosCliente = abonosData.filter(a => a.clienteId === clienteSeleccionado.id)
+                                                    .map(a => ({
+                                                        tipo: 'ABONO', fecha: a.fecha, monto: a.monto, metodo: a.metodoPago,
+                                                        id: a.id, raw: a,
+                                                        descripcion: `Abono ${a.numeroAbono || ''} - ${a.metodoPago === 'efectivo' ? 'Efectivo' : a.metodoPago === 'tarjeta' ? 'Tarjeta' : 'Transferencia'}`,
+                                                        folio: a.numeroFactura || a.numeroAbono || ''
+                                                    }));
 
-                                            // Aplicar filtro
-                                            if (filtroHistorial === 'ventas') movimientos = movimientos.filter(m => m.tipo === 'VENTA');
-                                            else if (filtroHistorial === 'facturas') movimientos = movimientos.filter(m => m.tipo === 'FACTURA');
-                                            else if (filtroHistorial === 'abonos') movimientos = movimientos.filter(m => m.tipo === 'ABONO');
-                                            else if (filtroHistorial === 'fc') movimientos = movimientos.filter(m => m.tipo === 'FACTURA' && (m.tipoFactura === 'credito' || m.folio.startsWith('FC')));
-                                            else if (filtroHistorial === 'fa') movimientos = movimientos.filter(m => m.tipo === 'FACTURA' && (m.tipoFactura !== 'credito' && m.tipoFactura !== 'abono' || m.folio.startsWith('FA')));
+                                                let movimientos = [...ventasCliente, ...facturasMovs, ...abonosCliente];
 
-                                            // Ordenar por fecha DESC
-                                            movimientos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+                                                // Aplicar filtro
+                                                if (filtroHistorial === 'ventas') movimientos = movimientos.filter(m => m.tipo === 'VENTA');
+                                                else if (filtroHistorial === 'facturas') movimientos = movimientos.filter(m => m.tipo === 'FACTURA');
+                                                else if (filtroHistorial === 'abonos') movimientos = movimientos.filter(m => m.tipo === 'ABONO');
+                                                else if (filtroHistorial === 'fc') movimientos = movimientos.filter(m => m.tipo === 'FACTURA' && (m.tipoFactura === 'credito' || m.folio.startsWith('FC')));
+                                                else if (filtroHistorial === 'fa') movimientos = movimientos.filter(m => m.tipo === 'FACTURA' && (m.tipoFactura !== 'credito' && m.tipoFactura !== 'abono' || m.folio.startsWith('FA')));
 
-                                            if (movimientos.length === 0) {
-                                                return <div style={{ textAlign:'center', color:'#6b7280', padding: '30px' }}>📭 Sin movimientos con este filtro</div>;
-                                            }
+                                                // Ordenar por fecha DESC
+                                                movimientos.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
-                                            // Agrupar por mes
-                                            const meses = {};
-                                            movimientos.forEach(mov => {
-                                                const fecha = parsearFecha(mov.fecha);
-                                                const claveMes = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
-                                                const nombreMes = fecha.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' }).toUpperCase();
-                                                if (!meses[claveMes]) meses[claveMes] = { nombre: nombreMes, movimientos: [], totalVendido: 0, totalAbonado: 0, totalFacturas: 0 };
-                                                meses[claveMes].movimientos.push(mov);
-                                                if (mov.tipo === 'VENTA') meses[claveMes].totalVendido += mov.monto;
-                                                else if (mov.tipo === 'ABONO') meses[claveMes].totalAbonado += mov.monto;
-                                                else if (mov.tipo === 'FACTURA') meses[claveMes].totalFacturas += mov.monto;
-                                            });
+                                                if (movimientos.length === 0) {
+                                                    return <div style={{ textAlign: 'center', color: '#6b7280', padding: '30px' }}>📭 Sin movimientos con este filtro</div>;
+                                                }
 
-                                            return Object.entries(meses).map(([clave, mesData]) => (
-                                                <div key={clave} style={{ marginBottom: '16px' }}>
-                                                    {/* Encabezado del mes */}
-                                                    <div style={{
-                                                        background: '#1e293b', color: 'white', padding: '10px 14px', borderRadius: '8px 8px 0 0',
-                                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                                                    }}>
-                                                        <span style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>📅 {mesData.nombre}</span>
-                                                        <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem' }}>
-                                                            {mesData.totalVendido > 0 && <span>🛒 {formatearMoneda(mesData.totalVendido)}</span>}
-                                                            {mesData.totalAbonado > 0 && <span style={{ color: '#86efac' }}>💰 +{formatearMoneda(mesData.totalAbonado)}</span>}
+                                                // Agrupar por mes
+                                                const meses = {};
+                                                movimientos.forEach(mov => {
+                                                    const fecha = parsearFecha(mov.fecha);
+                                                    const claveMes = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+                                                    const nombreMes = fecha.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' }).toUpperCase();
+                                                    if (!meses[claveMes]) meses[claveMes] = { nombre: nombreMes, movimientos: [], totalVendido: 0, totalAbonado: 0, totalFacturas: 0 };
+                                                    meses[claveMes].movimientos.push(mov);
+                                                    if (mov.tipo === 'VENTA') meses[claveMes].totalVendido += mov.monto;
+                                                    else if (mov.tipo === 'ABONO') meses[claveMes].totalAbonado += mov.monto;
+                                                    else if (mov.tipo === 'FACTURA') meses[claveMes].totalFacturas += mov.monto;
+                                                });
+
+                                                return Object.entries(meses).map(([clave, mesData]) => (
+                                                    <div key={clave} style={{ marginBottom: '16px' }}>
+                                                        {/* Encabezado del mes */}
+                                                        <div style={{
+                                                            background: '#1e293b', color: 'white', padding: '10px 14px', borderRadius: '8px 8px 0 0',
+                                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                                                        }}>
+                                                            <span style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>📅 {mesData.nombre}</span>
+                                                            <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem' }}>
+                                                                {mesData.totalVendido > 0 && <span>🛒 {formatearMoneda(mesData.totalVendido)}</span>}
+                                                                {mesData.totalAbonado > 0 && <span style={{ color: '#86efac' }}>💰 +{formatearMoneda(mesData.totalAbonado)}</span>}
+                                                            </div>
                                                         </div>
-                                                    </div>
 
-                                                    {/* Movimientos del mes */}
-                                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                        {mesData.movimientos.map(mov => {
-                                                            const colorBorde = mov.tipo === 'VENTA' ? '#3b82f6' : mov.tipo === 'ABONO' ? '#10b981' : '#f59e0b';
-                                                            const iconoTipo = mov.tipo === 'VENTA' ? '🛒' : mov.tipo === 'ABONO' ? '💰' : '📄';
-                                                            return (
-                                                                <div key={`${mov.tipo}-${mov.id}`} style={{
-                                                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                                                    background: 'white', padding: '10px 14px',
-                                                                    borderBottom: '1px solid #f1f5f9', borderLeft: `4px solid ${colorBorde}`,
-                                                                    cursor: 'pointer', transition: 'background 0.2s'
-                                                                }}
-                                                                onClick={() => {
-                                                                    if (mov.tipo === 'FACTURA') setFacturaSeleccionada(mov.raw);
-                                                                    else if (mov.tipo === 'VENTA') setDetalleVenta(mov.raw);
-                                                                    else {
-                                                                        const factAbono = facturas.find(f => f.abonoId === mov.raw.id || f.numeroAbono === mov.raw.numeroAbono);
-                                                                        if (factAbono) setFacturaSeleccionada(factAbono);
-                                                                        else setDetalleVenta({ ...mov.raw, productos: [{ nombre: 'Abono', cantidad: 1, precioVenta: mov.monto }], total: mov.monto });
-                                                                    }
-                                                                }}
-                                                                >
-                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-                                                                        <span style={{ fontSize: '1.2rem' }}>{iconoTipo}</span>
-                                                                        <div style={{ flex: 1 }}>
-                                                                            <div style={{ fontWeight: '600', color: '#1f2937', fontSize: '0.9rem' }}>{mov.descripcion}</div>
-                                                                            <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '2px' }}>
-                                                                                {parsearFecha(mov.fecha).toLocaleDateString('es-MX')} • {mov.metodo || ''}
-                                                                                {mov.folio && <span style={{ marginLeft: '8px', color: '#3b82f6' }}>📄 {mov.folio}</span>}
+                                                        {/* Movimientos del mes */}
+                                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                            {mesData.movimientos.map(mov => {
+                                                                const colorBorde = mov.tipo === 'VENTA' ? '#3b82f6' : mov.tipo === 'ABONO' ? '#10b981' : '#f59e0b';
+                                                                const iconoTipo = mov.tipo === 'VENTA' ? '🛒' : mov.tipo === 'ABONO' ? '💰' : '📄';
+                                                                return (
+                                                                    <div key={`${mov.tipo}-${mov.id}`} style={{
+                                                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                                        background: 'white', padding: '10px 14px',
+                                                                        borderBottom: '1px solid #f1f5f9', borderLeft: `4px solid ${colorBorde}`,
+                                                                        cursor: 'pointer', transition: 'background 0.2s'
+                                                                    }}
+                                                                        onClick={() => {
+                                                                            if (mov.tipo === 'FACTURA') setFacturaSeleccionada(mov.raw);
+                                                                            else if (mov.tipo === 'VENTA') setDetalleVenta(mov.raw);
+                                                                            else {
+                                                                                const factAbono = facturas.find(f => f.abonoId === mov.raw.id || f.numeroAbono === mov.raw.numeroAbono);
+                                                                                if (factAbono) setFacturaSeleccionada(factAbono);
+                                                                                else setDetalleVenta({ ...mov.raw, productos: [{ nombre: 'Abono', cantidad: 1, precioVenta: mov.monto }], total: mov.monto });
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                                                                            <span style={{ fontSize: '1.2rem' }}>{iconoTipo}</span>
+                                                                            <div style={{ flex: 1 }}>
+                                                                                <div style={{ fontWeight: '600', color: '#1f2937', fontSize: '0.9rem' }}>{mov.descripcion}</div>
+                                                                                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '2px' }}>
+                                                                                    {parsearFecha(mov.fecha).toLocaleDateString('es-MX')} • {mov.metodo || ''}
+                                                                                    {mov.folio && <span style={{ marginLeft: '8px', color: '#3b82f6' }}>📄 {mov.folio}</span>}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                                            <div style={{
+                                                                                fontWeight: 'bold', fontSize: '0.95rem',
+                                                                                color: mov.tipo === 'ABONO' ? '#059669' : '#1f2937'
+                                                                            }}>
+                                                                                {mov.tipo === 'ABONO' ? '+' : ''}{formatearMoneda(mov.monto)}
+                                                                            </div>
+                                                                            <div style={{
+                                                                                padding: '3px 8px', background: '#f1f5f9', border: '1px solid #cbd5e1',
+                                                                                borderRadius: '6px', fontSize: '0.75rem', color: '#334155', fontWeight: '600'
+                                                                            }}>
+                                                                                📄 Ver
                                                                             </div>
                                                                         </div>
                                                                     </div>
-                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                                        <div style={{
-                                                                            fontWeight: 'bold', fontSize: '0.95rem',
-                                                                            color: mov.tipo === 'ABONO' ? '#059669' : '#1f2937'
-                                                                        }}>
-                                                                            {mov.tipo === 'ABONO' ? '+' : ''}{formatearMoneda(mov.monto)}
-                                                                        </div>
-                                                                        <div style={{
-                                                                            padding: '3px 8px', background: '#f1f5f9', border: '1px solid #cbd5e1',
-                                                                            borderRadius: '6px', fontSize: '0.75rem', color: '#334155', fontWeight: '600'
-                                                                        }}>
-                                                                            📄 Ver
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        })}
+                                                                );
+                                                            })}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ));
-                                        })()}
+                                                ));
+                                            })()}
+                                        </div>
                                     </div>
-                                </div>
 
-                                {/* 📄 Documentos */}
-                                <div className={styles.expedienteSection}>
-                                    <h4>📄 Documentos</h4>
-                                    <div className={styles.documentos}>
-                                        <div className={styles.documento}>
-                                            <div className={styles.documentoIcon}>🪪</div>
-                                            <div className={styles.documentoInfo}>
-                                                <span>Credencial (INE)</span>
-                                                {clienteSeleccionado.credencialURL ? (
-                                                    <div style={{ marginTop: '8px' }}>
-                                                        <img 
-                                                            src={clienteSeleccionado.credencialURL} 
-                                                            alt="Credencial" 
-                                                            style={{ maxWidth: '100px', maxHeight: '60px', borderRadius: '4px', border: '1px solid #ddd', cursor: 'pointer' }}
-                                                            onClick={() => setModalImagen({ show: true, url: clienteSeleccionado.credencialURL })}
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <span style={{ color: '#9ca3af', fontSize: '12px' }}>Sin documento</span>
-                                                )}
+                                    {/* 📄 Documentos */}
+                                    <div className={styles.expedienteSection}>
+                                        <h4>📄 Documentos</h4>
+                                        <div className={styles.documentos}>
+                                            <div className={styles.documento}>
+                                                <div className={styles.documentoIcon}>🪪</div>
+                                                <div className={styles.documentoInfo}>
+                                                    <span>Credencial (INE)</span>
+                                                    {clienteSeleccionado.credencialURL ? (
+                                                        <div style={{ marginTop: '8px' }}>
+                                                            <img
+                                                                src={clienteSeleccionado.credencialURL}
+                                                                alt="Credencial"
+                                                                style={{ maxWidth: '100px', maxHeight: '60px', borderRadius: '4px', border: '1px solid #ddd', cursor: 'pointer' }}
+                                                                onClick={() => setModalImagen({ show: true, url: clienteSeleccionado.credencialURL })}
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <span style={{ color: '#9ca3af', fontSize: '12px' }}>Sin documento</span>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className={styles.documento}>
-                                            <div className={styles.documentoIcon}>🏠</div>
-                                            <div className={styles.documentoInfo}>
-                                                <span>Comprobante de Domicilio</span>
-                                                {clienteSeleccionado.comprobanteURL ? (
-                                                    <div style={{ marginTop: '8px' }}>
-                                                        <img 
-                                                            src={clienteSeleccionado.comprobanteURL} 
-                                                            alt="Comprobante" 
-                                                            style={{ maxWidth: '100px', maxHeight: '60px', borderRadius: '4px', border: '1px solid #ddd', cursor: 'pointer' }}
-                                                            onClick={() => setModalImagen({ show: true, url: clienteSeleccionado.comprobanteURL })}
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <span style={{ color: '#9ca3af', fontSize: '12px' }}>Sin documento</span>
-                                                )}
+                                            <div className={styles.documento}>
+                                                <div className={styles.documentoIcon}>🏠</div>
+                                                <div className={styles.documentoInfo}>
+                                                    <span>Comprobante de Domicilio</span>
+                                                    {clienteSeleccionado.comprobanteURL ? (
+                                                        <div style={{ marginTop: '8px' }}>
+                                                            <img
+                                                                src={clienteSeleccionado.comprobanteURL}
+                                                                alt="Comprobante"
+                                                                style={{ maxWidth: '100px', maxHeight: '60px', borderRadius: '4px', border: '1px solid #ddd', cursor: 'pointer' }}
+                                                                onClick={() => setModalImagen({ show: true, url: clienteSeleccionado.comprobanteURL })}
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <span style={{ color: '#9ca3af', fontSize: '12px' }}>Sin documento</span>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className={styles.documento}>
-                                            <div className={styles.documentoIcon}>📋</div>
-                                            <div className={styles.documentoInfo}>
-                                                <span>Otros</span>
-                                                {clienteSeleccionado.otrosDocURL ? (
-                                                    <div style={{ marginTop: '8px' }}>
-                                                        <img 
-                                                            src={clienteSeleccionado.otrosDocURL} 
-                                                            alt="Otros" 
-                                                            style={{ maxWidth: '100px', maxHeight: '60px', borderRadius: '4px', border: '1px solid #ddd', cursor: 'pointer' }}
-                                                            onClick={() => setModalImagen({ show: true, url: clienteSeleccionado.otrosDocURL })}
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <span style={{ color: '#9ca3af', fontSize: '12px' }}>Sin documento</span>
-                                                )}
+                                            <div className={styles.documento}>
+                                                <div className={styles.documentoIcon}>📋</div>
+                                                <div className={styles.documentoInfo}>
+                                                    <span>Otros</span>
+                                                    {clienteSeleccionado.otrosDocURL ? (
+                                                        <div style={{ marginTop: '8px' }}>
+                                                            <img
+                                                                src={clienteSeleccionado.otrosDocURL}
+                                                                alt="Otros"
+                                                                style={{ maxWidth: '100px', maxHeight: '60px', borderRadius: '4px', border: '1px solid #ddd', cursor: 'pointer' }}
+                                                                onClick={() => setModalImagen({ show: true, url: clienteSeleccionado.otrosDocURL })}
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <span style={{ color: '#9ca3af', fontSize: '12px' }}>Sin documento</span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div className={styles.modalFooter}>
-                            <button 
-                                className={styles.btnDanger}
-                                onClick={() => iniciarEliminacion(clienteSeleccionado)}
-                            >
-                                🗑️ Eliminar
-                            </button>
-                            <button className={styles.btnSecondary} onClick={() => setMostrarModal(false)}>
-                                Cerrar
-                            </button>
-                            <button 
-                                className={styles.btnPrimary}
-                                onClick={() => iniciarEdicion(clienteSeleccionado)}
-                            >
-                                ✏️ Editar Cliente
-                            </button>
+                            <div className={styles.modalFooter}>
+                                <button
+                                    className={styles.btnDanger}
+                                    onClick={() => iniciarEliminacion(clienteSeleccionado)}
+                                >
+                                    🗑️ Eliminar
+                                </button>
+                                <button className={styles.btnSecondary} onClick={() => setMostrarModal(false)}>
+                                    Cerrar
+                                </button>
+                                <button
+                                    className={styles.btnPrimary}
+                                    onClick={() => iniciarEdicion(clienteSeleccionado)}
+                                >
+                                    ✏️ Editar Cliente
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* Modal de Nuevo/Editar Cliente */}
-            {mostrarFormulario && (
-                <div className={styles.modalOverlay} onClick={() => { setMostrarFormulario(false); setModoEdicion(false); setClienteEditando(null); }}>
-                    <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-                        <div className={styles.modalHeader}>
-                            <h2>{modoEdicion ? '✏️ Editar Cliente' : '➕ Nuevo Cliente'}</h2>
-                            <button className={styles.closeButton} onClick={() => { setMostrarFormulario(false); setModoEdicion(false); setClienteEditando(null); }}>
-                                ✕
-                            </button>
-                        </div>
-                        <div className={styles.modalBody}>
-                            <form className={styles.form} onSubmit={handleSubmit}>
-                                <div className={styles.formSection}>
-                                    <h4>👤 Información Personal</h4>
-                                    <div className={styles.formGroup} style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                        <label style={{ marginBottom: '10px' }}>Foto de Perfil / Avatar</label>
-                                        <div className={styles.comprobanteUpload} style={{ width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', position: 'relative' }}>
-                                            <label 
-                                                className={styles.uploadLabel} 
+                {/* Modal de Nuevo/Editar Cliente */}
+                {mostrarFormulario && (
+                    <div className={styles.modalOverlay} onClick={() => { setMostrarFormulario(false); setModoEdicion(false); setClienteEditando(null); }}>
+                        <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+                            <div className={styles.modalHeader}>
+                                <h2>{modoEdicion ? '✏️ Editar Cliente' : '➕ Nuevo Cliente'}</h2>
+                                <button className={styles.closeButton} onClick={() => { setMostrarFormulario(false); setModoEdicion(false); setClienteEditando(null); }}>
+                                    ✕
+                                </button>
+                            </div>
+                            <div className={styles.modalBody}>
+                                <form className={styles.form} onSubmit={handleSubmit}>
+                                    <div className={styles.formSection}>
+                                        <h4>👤 Información Personal</h4>
+                                        <div className={styles.formGroup} style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                            <label style={{ marginBottom: '10px' }}>Foto de Perfil / Avatar</label>
+                                            <div className={styles.comprobanteUpload} style={{ width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', position: 'relative' }}>
+                                                <label
+                                                    className={styles.uploadLabel}
+                                                    onDragOver={handleDragOver}
+                                                    onDragLeave={handleDragLeave}
+                                                    onDrop={(e) => handleDrop(e, 'avatar')}
+                                                    style={{ borderRadius: '50%', width: '100%', height: '100%', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+                                                >
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={(e) => handleDocumentoChange(e, 'avatar')}
+                                                        style={{ display: 'none' }}
+                                                    />
+                                                    {formData.avatarURL ? (
+                                                        <img src={formData.avatarURL} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    ) : (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9ca3af' }}>
+                                                            <span style={{ fontSize: '24px' }}>📷</span>
+                                                            <span style={{ fontSize: '10px' }}>Subir Foto</span>
+                                                        </div>
+                                                    )}
+                                                </label>
+                                                {subiendoImagenes.avatar && (
+                                                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+                                                        <span style={{ fontSize: '10px' }}>⏳ Subiendo...</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {formData.avatarURL && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => eliminarDocumento('avatar')}
+                                                    style={{ marginTop: '8px', color: '#ef4444', background: 'none', border: 'none', fontSize: '12px', cursor: 'pointer' }}
+                                                >
+                                                    ✕ Quitar foto
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        <div className={styles.formGrid}>
+                                            <div className={styles.formGroup}>
+                                                <label>Nombre Completo *</label>
+                                                <input
+                                                    type="text"
+                                                    name="nombre"
+                                                    value={formData.nombre}
+                                                    onChange={handleInputChange}
+                                                    placeholder="Ej: Juan Pérez García"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className={styles.formGroup}>
+                                                <label>Teléfono *</label>
+                                                <input
+                                                    type="tel"
+                                                    name="telefono"
+                                                    value={formData.telefono}
+                                                    onChange={handleInputChange}
+                                                    placeholder="Ej: 462-123-4567"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className={styles.formGroup}>
+                                                <label>Email</label>
+                                                <input
+                                                    type="text"
+                                                    name="email"
+                                                    value={formData.email}
+                                                    onChange={handleInputChange}
+                                                    placeholder="Ej: correo@email.com"
+                                                />
+                                            </div>
+                                            <div className={styles.formGroup}>
+                                                <label>Dirección *</label>
+                                                <input
+                                                    type="text"
+                                                    name="direccion"
+                                                    value={formData.direccion}
+                                                    onChange={handleInputChange}
+                                                    placeholder="Calle, número, colonia"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className={styles.formGroup}>
+                                                <label>Dirección de Entrega</label>
+                                                <input
+                                                    type="text"
+                                                    name="direccionEntrega"
+                                                    value={formData.direccionEntrega}
+                                                    onChange={handleInputChange}
+                                                    placeholder="Dirección para entregar pedidos"
+                                                />
+                                            </div>
+                                            <div className={styles.formGroup}>
+                                                <label>Ciudad</label>
+                                                <input
+                                                    type="text"
+                                                    name="ciudad"
+                                                    value={formData.ciudad}
+                                                    onChange={handleInputChange}
+                                                    placeholder="Ej: León"
+                                                />
+                                            </div>
+                                            <div className={styles.formGroup}>
+                                                <label>Código Postal</label>
+                                                <input
+                                                    type="text"
+                                                    name="cp"
+                                                    value={formData.cp}
+                                                    onChange={handleInputChange}
+                                                    placeholder="Ej: 36960"
+                                                />
+                                            </div>
+                                            <div className={styles.formGroup}>
+                                                <label>RFC / CURP</label>
+                                                <input
+                                                    type="text"
+                                                    name="rfc"
+                                                    value={formData.rfc}
+                                                    onChange={handleInputChange}
+                                                    placeholder="RFC o CURP del cliente"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className={styles.formSection}>
+                                        <h4>💳 Tipo de Cliente</h4>
+                                        <div className={styles.radioGroup}>
+                                            <label className={styles.radioLabel}>
+                                                <input
+                                                    type="radio"
+                                                    name="tipoCliente"
+                                                    value="contado"
+                                                    checked={formData.tipoCliente === 'contado'}
+                                                    onChange={handleInputChange}
+                                                />
+                                                <span className={styles.radioCustom}></span>
+                                                💵 Contado
+                                            </label>
+                                            <label className={styles.radioLabel}>
+                                                <input
+                                                    type="radio"
+                                                    name="tipoCliente"
+                                                    value="credito"
+                                                    checked={formData.tipoCliente === 'credito'}
+                                                    onChange={handleInputChange}
+                                                />
+                                                <span className={styles.radioCustom}></span>
+                                                💳 Crédito
+                                            </label>
+                                        </div>
+
+                                        {/* Campo condicional para Días de Crédito ELIMINADO por solicitud del cliente */}
+                                        {/* Se decide en el momento de la venta */}
+                                    </div>
+
+                                    <div className={styles.formSection}>
+                                        <h4>📄 Documentos (Opcional)</h4>
+                                        <div className={styles.uploadGrid}>
+                                            {/* Credencial (INE) */}
+                                            <label
+                                                className={styles.uploadBox}
                                                 onDragOver={handleDragOver}
                                                 onDragLeave={handleDragLeave}
-                                                onDrop={(e) => handleDrop(e, 'avatar')}
-                                                style={{ borderRadius: '50%', width: '100%', height: '100%', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
+                                                onDrop={(e) => handleDrop(e, 'credencial')}
+                                                style={{ cursor: 'pointer' }}
                                             >
                                                 <input
                                                     type="file"
-                                                    accept="image/*"
-                                                    onChange={(e) => handleDocumentoChange(e, 'avatar')}
+                                                    accept="image/*,.pdf"
+                                                    onChange={(e) => handleDocumentoChange(e, 'credencial')}
                                                     style={{ display: 'none' }}
                                                 />
-                                                {formData.avatarURL ? (
-                                                    <img src={formData.avatarURL} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                <span>🪪</span>
+                                                <p>Credencial (INE)</p>
+                                                {formData.credencialURL ? (
+                                                    <div style={{ position: 'relative', width: '100%' }}>
+                                                        <img
+                                                            src={formData.credencialURL}
+                                                            alt="Credencial"
+                                                            style={{
+                                                                maxWidth: '100%',
+                                                                maxHeight: '80px',
+                                                                borderRadius: '6px',
+                                                                border: '1px solid #ddd'
+                                                            }}
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); eliminarDocumento('credencial'); }}
+                                                            style={{
+                                                                position: 'absolute',
+                                                                top: '-6px',
+                                                                right: '-6px',
+                                                                background: '#ef4444',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '50%',
+                                                                width: '20px',
+                                                                height: '20px',
+                                                                cursor: 'pointer',
+                                                                fontSize: '10px'
+                                                            }}
+                                                        >✕</button>
+                                                    </div>
                                                 ) : (
-                                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9ca3af' }}>
-                                                        <span style={{ fontSize: '24px' }}>📷</span>
-                                                        <span style={{ fontSize: '10px' }}>Subir Foto</span>
+                                                    <small style={{ color: '#9ca3af', marginBottom: '8px' }}>
+                                                        Toca para seleccionar
+                                                    </small>
+                                                )}
+                                                {subiendoImagenes.credencial && (
+                                                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px' }}>
+                                                        <span style={{ fontSize: '12px' }}>⏳ Subiendo...</span>
                                                     </div>
                                                 )}
                                             </label>
-                                            {subiendoImagenes.avatar && (
-                                                <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
-                                                    <span style={{ fontSize: '10px' }}>⏳ Subiendo...</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                        {formData.avatarURL && (
-                                            <button 
-                                                type="button" 
-                                                onClick={() => eliminarDocumento('avatar')}
-                                                style={{ marginTop: '8px', color: '#ef4444', background: 'none', border: 'none', fontSize: '12px', cursor: 'pointer' }}
+
+                                            {/* Comprobante de Domicilio */}
+                                            <label
+                                                className={styles.uploadBox}
+                                                onDragOver={handleDragOver}
+                                                onDragLeave={handleDragLeave}
+                                                onDrop={(e) => handleDrop(e, 'comprobante')}
+                                                style={{ cursor: 'pointer' }}
                                             >
-                                                ✕ Quitar foto
-                                            </button>
-                                        )}
-                                    </div>
+                                                <input
+                                                    type="file"
+                                                    accept="image/*,.pdf"
+                                                    onChange={(e) => handleDocumentoChange(e, 'comprobante')}
+                                                    style={{ display: 'none' }}
+                                                />
+                                                <span>🏠</span>
+                                                <p>Comprobante de Domicilio</p>
+                                                {formData.comprobanteURL ? (
+                                                    <div style={{ position: 'relative', width: '100%' }}>
+                                                        <img
+                                                            src={formData.comprobanteURL}
+                                                            alt="Comprobante"
+                                                            style={{
+                                                                maxWidth: '100%',
+                                                                maxHeight: '80px',
+                                                                borderRadius: '6px',
+                                                                border: '1px solid #ddd'
+                                                            }}
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); eliminarDocumento('comprobante'); }}
+                                                            style={{
+                                                                position: 'absolute',
+                                                                top: '-6px',
+                                                                right: '-6px',
+                                                                background: '#ef4444',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '50%',
+                                                                width: '20px',
+                                                                height: '20px',
+                                                                cursor: 'pointer',
+                                                                fontSize: '10px'
+                                                            }}
+                                                        >✕</button>
+                                                    </div>
+                                                ) : (
+                                                    <small style={{ color: '#9ca3af', marginBottom: '8px' }}>
+                                                        Toca para seleccionar
+                                                    </small>
+                                                )}
+                                                {subiendoImagenes.comprobante && (
+                                                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px' }}>
+                                                        <span style={{ fontSize: '12px' }}>⏳ Subiendo...</span>
+                                                    </div>
+                                                )}
+                                            </label>
 
-                                    <div className={styles.formGrid}>
-                                        <div className={styles.formGroup}>
-                                            <label>Nombre Completo *</label>
-                                            <input 
-                                                type="text" 
-                                                name="nombre"
-                                                value={formData.nombre}
-                                                onChange={handleInputChange}
-                                                placeholder="Ej: Juan Pérez García" 
-                                                required 
-                                            />
-                                        </div>
-                                        <div className={styles.formGroup}>
-                                            <label>Teléfono *</label>
-                                            <input 
-                                                type="tel" 
-                                                name="telefono"
-                                                value={formData.telefono}
-                                                onChange={handleInputChange}
-                                                placeholder="Ej: 462-123-4567" 
-                                                required 
-                                            />
-                                        </div>
-                                        <div className={styles.formGroup}>
-                                            <label>Email</label>
-                                            <input 
-                                                type="text" 
-                                                name="email"
-                                                value={formData.email}
-                                                onChange={handleInputChange}
-                                                placeholder="Ej: correo@email.com" 
-                                            />
-                                        </div>
-                                        <div className={styles.formGroup}>
-                                            <label>Dirección *</label>
-                                            <input 
-                                                type="text" 
-                                                name="direccion"
-                                                value={formData.direccion}
-                                                onChange={handleInputChange}
-                                                placeholder="Calle, número, colonia" 
-                                                required 
-                                            />
-                                        </div>
-                                        <div className={styles.formGroup}>
-                                            <label>Dirección de Entrega</label>
-                                            <input 
-                                                type="text" 
-                                                name="direccionEntrega"
-                                                value={formData.direccionEntrega}
-                                                onChange={handleInputChange}
-                                                placeholder="Dirección para entregar pedidos" 
-                                            />
-                                        </div>
-                                        <div className={styles.formGroup}>
-                                            <label>Ciudad</label>
-                                            <input 
-                                                type="text" 
-                                                name="ciudad"
-                                                value={formData.ciudad}
-                                                onChange={handleInputChange}
-                                                placeholder="Ej: León" 
-                                            />
-                                        </div>
-                                        <div className={styles.formGroup}>
-                                            <label>Código Postal</label>
-                                            <input 
-                                                type="text" 
-                                                name="cp"
-                                                value={formData.cp}
-                                                onChange={handleInputChange}
-                                                placeholder="Ej: 36960" 
-                                            />
-                                        </div>
-                                        <div className={styles.formGroup}>
-                                            <label>RFC / CURP</label>
-                                            <input 
-                                                type="text" 
-                                                name="rfc"
-                                                value={formData.rfc}
-                                                onChange={handleInputChange}
-                                                placeholder="RFC o CURP del cliente" 
-                                            />
+                                            {/* Otros Documentos */}
+                                            <label
+                                                className={styles.uploadBox}
+                                                onDragOver={handleDragOver}
+                                                onDragLeave={handleDragLeave}
+                                                onDrop={(e) => handleDrop(e, 'otros')}
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                <input
+                                                    type="file"
+                                                    accept="image/*,.pdf"
+                                                    onChange={(e) => handleDocumentoChange(e, 'otros')}
+                                                    style={{ display: 'none' }}
+                                                />
+                                                <span>📋</span>
+                                                <p>Otros</p>
+                                                {formData.otrosDocURL ? (
+                                                    <div style={{ position: 'relative', width: '100%' }}>
+                                                        <img
+                                                            src={formData.otrosDocURL}
+                                                            alt="Otros"
+                                                            style={{
+                                                                maxWidth: '100%',
+                                                                maxHeight: '80px',
+                                                                borderRadius: '6px',
+                                                                border: '1px solid #ddd'
+                                                            }}
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); eliminarDocumento('otros'); }}
+                                                            style={{
+                                                                position: 'absolute',
+                                                                top: '-6px',
+                                                                right: '-6px',
+                                                                background: '#ef4444',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '50%',
+                                                                width: '20px',
+                                                                height: '20px',
+                                                                cursor: 'pointer',
+                                                                fontSize: '10px'
+                                                            }}
+                                                        >✕</button>
+                                                    </div>
+                                                ) : (
+                                                    <small style={{ color: '#9ca3af', marginBottom: '8px' }}>
+                                                        Toca para seleccionar
+                                                    </small>
+                                                )}
+                                                {subiendoImagenes.otros && (
+                                                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px' }}>
+                                                        <span style={{ fontSize: '12px' }}>⏳ Subiendo...</span>
+                                                    </div>
+                                                )}
+                                            </label>
                                         </div>
                                     </div>
-                                </div>
-
-                                <div className={styles.formSection}>
-                                    <h4>💳 Tipo de Cliente</h4>
-                                    <div className={styles.radioGroup}>
-                                        <label className={styles.radioLabel}>
-                                            <input 
-                                                type="radio" 
-                                                name="tipoCliente" 
-                                                value="contado"
-                                                checked={formData.tipoCliente === 'contado'}
-                                                onChange={handleInputChange}
-                                            />
-                                            <span className={styles.radioCustom}></span>
-                                            💵 Contado
-                                        </label>
-                                        <label className={styles.radioLabel}>
-                                            <input 
-                                                type="radio" 
-                                                name="tipoCliente" 
-                                                value="credito"
-                                                checked={formData.tipoCliente === 'credito'}
-                                                onChange={handleInputChange}
-                                            />
-                                            <span className={styles.radioCustom}></span>
-                                            💳 Crédito
-                                        </label>
-                                    </div>
-                                    
-                                    {/* Campo condicional para Días de Crédito ELIMINADO por solicitud del cliente */}
-                                    {/* Se decide en el momento de la venta */}
-                                </div>
-
-                                <div className={styles.formSection}>
-                                    <h4>📄 Documentos (Opcional)</h4>
-                                    <div className={styles.uploadGrid}>
-                                        {/* Credencial (INE) */}
-                                        <label 
-                                            className={styles.uploadBox}
-                                            onDragOver={handleDragOver}
-                                            onDragLeave={handleDragLeave}
-                                            onDrop={(e) => handleDrop(e, 'credencial')}
-                                            style={{ cursor: 'pointer' }}
-                                        >
-                                            <input 
-                                                type="file" 
-                                                accept="image/*,.pdf" 
-                                                onChange={(e) => handleDocumentoChange(e, 'credencial')}
-                                                style={{ display: 'none' }}
-                                            />
-                                            <span>🪪</span>
-                                            <p>Credencial (INE)</p>
-                                            {formData.credencialURL ? (
-                                                <div style={{ position: 'relative', width: '100%' }}>
-                                                    <img 
-                                                        src={formData.credencialURL} 
-                                                        alt="Credencial" 
-                                                        style={{ 
-                                                            maxWidth: '100%', 
-                                                            maxHeight: '80px', 
-                                                            borderRadius: '6px',
-                                                            border: '1px solid #ddd'
-                                                        }} 
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); eliminarDocumento('credencial'); }}
-                                                        style={{
-                                                            position: 'absolute',
-                                                            top: '-6px',
-                                                            right: '-6px',
-                                                            background: '#ef4444',
-                                                            color: 'white',
-                                                            border: 'none',
-                                                            borderRadius: '50%',
-                                                            width: '20px',
-                                                            height: '20px',
-                                                            cursor: 'pointer',
-                                                            fontSize: '10px'
-                                                        }}
-                                                    >✕</button>
-                                                </div>
-                                            ) : (
-                                                <small style={{ color: '#9ca3af', marginBottom: '8px' }}>
-                                                    Toca para seleccionar
-                                                </small>
-                                            )}
-                                            {subiendoImagenes.credencial && (
-                                                <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px' }}>
-                                                    <span style={{ fontSize: '12px' }}>⏳ Subiendo...</span>
-                                                </div>
-                                            )}
-                                        </label>
-                                        
-                                        {/* Comprobante de Domicilio */}
-                                        <label 
-                                            className={styles.uploadBox}
-                                            onDragOver={handleDragOver}
-                                            onDragLeave={handleDragLeave}
-                                            onDrop={(e) => handleDrop(e, 'comprobante')}
-                                            style={{ cursor: 'pointer' }}
-                                        >
-                                            <input 
-                                                type="file" 
-                                                accept="image/*,.pdf" 
-                                                onChange={(e) => handleDocumentoChange(e, 'comprobante')}
-                                                style={{ display: 'none' }}
-                                            />
-                                            <span>🏠</span>
-                                            <p>Comprobante de Domicilio</p>
-                                            {formData.comprobanteURL ? (
-                                                <div style={{ position: 'relative', width: '100%' }}>
-                                                    <img 
-                                                        src={formData.comprobanteURL} 
-                                                        alt="Comprobante" 
-                                                        style={{ 
-                                                            maxWidth: '100%', 
-                                                            maxHeight: '80px', 
-                                                            borderRadius: '6px',
-                                                            border: '1px solid #ddd'
-                                                        }} 
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); eliminarDocumento('comprobante'); }}
-                                                        style={{
-                                                            position: 'absolute',
-                                                            top: '-6px',
-                                                            right: '-6px',
-                                                            background: '#ef4444',
-                                                            color: 'white',
-                                                            border: 'none',
-                                                            borderRadius: '50%',
-                                                            width: '20px',
-                                                            height: '20px',
-                                                            cursor: 'pointer',
-                                                            fontSize: '10px'
-                                                        }}
-                                                    >✕</button>
-                                                </div>
-                                            ) : (
-                                                <small style={{ color: '#9ca3af', marginBottom: '8px' }}>
-                                                    Toca para seleccionar
-                                                </small>
-                                            )}
-                                            {subiendoImagenes.comprobante && (
-                                                <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px' }}>
-                                                    <span style={{ fontSize: '12px' }}>⏳ Subiendo...</span>
-                                                </div>
-                                            )}
-                                        </label>
-                                        
-                                        {/* Otros Documentos */}
-                                        <label 
-                                            className={styles.uploadBox}
-                                            onDragOver={handleDragOver}
-                                            onDragLeave={handleDragLeave}
-                                            onDrop={(e) => handleDrop(e, 'otros')}
-                                            style={{ cursor: 'pointer' }}
-                                        >
-                                            <input 
-                                                type="file" 
-                                                accept="image/*,.pdf" 
-                                                onChange={(e) => handleDocumentoChange(e, 'otros')}
-                                                style={{ display: 'none' }}
-                                            />
-                                            <span>📋</span>
-                                            <p>Otros</p>
-                                            {formData.otrosDocURL ? (
-                                                <div style={{ position: 'relative', width: '100%' }}>
-                                                    <img 
-                                                        src={formData.otrosDocURL} 
-                                                        alt="Otros" 
-                                                        style={{ 
-                                                            maxWidth: '100%', 
-                                                            maxHeight: '80px', 
-                                                            borderRadius: '6px',
-                                                            border: '1px solid #ddd'
-                                                        }} 
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); eliminarDocumento('otros'); }}
-                                                        style={{
-                                                            position: 'absolute',
-                                                            top: '-6px',
-                                                            right: '-6px',
-                                                            background: '#ef4444',
-                                                            color: 'white',
-                                                            border: 'none',
-                                                            borderRadius: '50%',
-                                                            width: '20px',
-                                                            height: '20px',
-                                                            cursor: 'pointer',
-                                                            fontSize: '10px'
-                                                        }}
-                                                    >✕</button>
-                                                </div>
-                                            ) : (
-                                                <small style={{ color: '#9ca3af', marginBottom: '8px' }}>
-                                                    Toca para seleccionar
-                                                </small>
-                                            )}
-                                            {subiendoImagenes.otros && (
-                                                <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px' }}>
-                                                    <span style={{ fontSize: '12px' }}>⏳ Subiendo...</span>
-                                                </div>
-                                            )}
-                                        </label>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                        <div className={styles.modalFooter}>
-                            <button 
-                                className={styles.btnSecondary} 
-                                onClick={() => setMostrarFormulario(false)}
-                                type="button"
-                            >
-                                Cancelar
-                            </button>
-                            <button 
-                                className={styles.btnPrimary}
-                                onClick={handleSubmit}
-                                disabled={guardando || Object.values(subiendoImagenes).some(Boolean)}
-                                style={{ opacity: (guardando || Object.values(subiendoImagenes).some(Boolean)) ? 0.7 : 1 }}
-                            >
-                                {guardando ? '⏳ Guardando...' : Object.values(subiendoImagenes).some(Boolean) ? '⏳ Subiendo archivos...' : '💾 Guardar Cliente'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal de Confirmación de Eliminación */}
-            {mostrarModalEliminar && clienteAEliminar && (
-                <div className={styles.modalOverlay} onClick={cancelarEliminacion}>
-                    <div className={`${styles.modal} ${styles.modalEliminar}`} onClick={(e) => e.stopPropagation()}>
-                        <div className={styles.modalHeader}>
-                            <h2>⚠️ Confirmar Eliminación</h2>
-                            <button className={styles.closeButton} onClick={cancelarEliminacion}>
-                                ✕
-                            </button>
-                        </div>
-                        <div className={styles.modalBody}>
-                            <div className={styles.advertenciaEliminar}>
-                                <span className={styles.advertenciaIcono}>🗑️</span>
-                                <p><strong>¿Estás seguro de eliminar este cliente?</strong></p>
-                                <p className={styles.advertenciaTexto}>
-                                    Esta acción eliminará permanentemente:<br/>
-                                    • Cliente: <strong>{clienteAEliminar.nombre}</strong><br/>
-                                    • Teléfono: {clienteAEliminar.telefono}<br/>
-                                    {clienteAEliminar.saldoPendiente > 0 && (
-                                        <span className={styles.advertenciaSaldo}>
-                                            ⚠️ Este cliente tiene un saldo pendiente de {formatearMoneda(clienteAEliminar.saldoPendiente)}
-                                        </span>
-                                    )}
-                                </p>
+                                </form>
                             </div>
-                            <div className={styles.confirmarInput}>
-                                <label>Escribe <strong>"eliminar"</strong> para confirmar:</label>
-                                <input 
-                                    type="text"
-                                    value={confirmarTexto}
-                                    onChange={(e) => setConfirmarTexto(e.target.value)}
-                                    placeholder="Escribe eliminar"
-                                    autoFocus
-                                />
-                            </div>
-                            <div className={styles.eliminarActions}>
-                                <button className={styles.btnCancelar} onClick={cancelarEliminacion}>
+                            <div className={styles.modalFooter}>
+                                <button
+                                    className={styles.btnSecondary}
+                                    onClick={() => setMostrarFormulario(false)}
+                                    type="button"
+                                >
                                     Cancelar
                                 </button>
-                                <button 
-                                    className={styles.btnConfirmarEliminar}
-                                    onClick={confirmarEliminacion}
-                                    disabled={confirmarTexto.toLowerCase() !== 'eliminar'}
+                                <button
+                                    className={styles.btnPrimary}
+                                    onClick={handleSubmit}
+                                    disabled={guardando || Object.values(subiendoImagenes).some(Boolean)}
+                                    style={{ opacity: (guardando || Object.values(subiendoImagenes).some(Boolean)) ? 0.7 : 1 }}
                                 >
-                                    🗑️ Eliminar Definitivamente
+                                    {guardando ? '⏳ Guardando...' : Object.values(subiendoImagenes).some(Boolean) ? '⏳ Subiendo archivos...' : '💾 Guardar Cliente'}
                                 </button>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </main>
+                )}
+
+                {/* Modal de Confirmación de Eliminación */}
+                {mostrarModalEliminar && clienteAEliminar && (
+                    <div className={styles.modalOverlay} onClick={cancelarEliminacion}>
+                        <div className={`${styles.modal} ${styles.modalEliminar}`} onClick={(e) => e.stopPropagation()}>
+                            <div className={styles.modalHeader}>
+                                <h2>⚠️ Confirmar Eliminación</h2>
+                                <button className={styles.closeButton} onClick={cancelarEliminacion}>
+                                    ✕
+                                </button>
+                            </div>
+                            <div className={styles.modalBody}>
+                                <div className={styles.advertenciaEliminar}>
+                                    <span className={styles.advertenciaIcono}>🗑️</span>
+                                    <p><strong>¿Estás seguro de eliminar este cliente?</strong></p>
+                                    <p className={styles.advertenciaTexto}>
+                                        Esta acción eliminará permanentemente:<br />
+                                        • Cliente: <strong>{clienteAEliminar.nombre}</strong><br />
+                                        • Teléfono: {clienteAEliminar.telefono}<br />
+                                        {clienteAEliminar.saldoPendiente > 0 && (
+                                            <span className={styles.advertenciaSaldo}>
+                                                ⚠️ Este cliente tiene un saldo pendiente de {formatearMoneda(clienteAEliminar.saldoPendiente)}
+                                            </span>
+                                        )}
+                                    </p>
+                                </div>
+                                <div className={styles.confirmarInput}>
+                                    <label>Escribe <strong>"eliminar"</strong> para confirmar:</label>
+                                    <input
+                                        type="text"
+                                        value={confirmarTexto}
+                                        onChange={(e) => setConfirmarTexto(e.target.value)}
+                                        placeholder="Escribe eliminar"
+                                        autoFocus
+                                    />
+                                </div>
+                                <div className={styles.eliminarActions}>
+                                    <button className={styles.btnCancelar} onClick={cancelarEliminacion}>
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        className={styles.btnConfirmarEliminar}
+                                        onClick={confirmarEliminacion}
+                                        disabled={confirmarTexto.toLowerCase() !== 'eliminar'}
+                                    >
+                                        🗑️ Eliminar Definitivamente
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </main>
         </>
     );
 }

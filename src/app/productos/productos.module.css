@@ -295,18 +295,21 @@
 
 .productImage {
   height: 140px;
-  background: white; /* Changed from gray gradient for better image display */
+  background: white;
+  /* Changed from gray gradient for better image display */
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  overflow: hidden; /* Ensure image doesn't overflow */
+  overflow: hidden;
+  /* Ensure image doesn't overflow */
 }
 
 .productImg {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* Show full image */
+  object-fit: contain;
+  /* Show full image */
   cursor: zoom-in;
   transition: transform var(--transition-normal);
 }
@@ -608,6 +611,16 @@
   font-weight: 500;
 }
 
+.catRes {
+  color: var(--primary-600);
+  /* Azul */
+}
+
+.catCerdo {
+  color: #ff8c00;
+  /* Naranja */
+}
+
 .precioVenta {
   font-weight: 600;
   color: var(--primary-600);
@@ -702,7 +715,7 @@
   background: var(--primary-100);
   color: var(--primary-700);
   transform: translateY(-2px);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .btnDeleteWithText {
@@ -745,7 +758,8 @@
 .selectInput {
   background-color: white;
   cursor: pointer;
-  appearance: auto; /* Ensure standard dropdown arrow appears */
+  appearance: auto;
+  /* Ensure standard dropdown arrow appears */
 }
 
 .modalHeader {
@@ -891,21 +905,22 @@
   padding: 32px;
   border: 2px dashed var(--gray-300);
   border-radius: var(--radius-lg);
-/* Input with datalist */
-.inputWithList {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius-md);
-  font-size: 0.95rem;
-  transition: all var(--transition-fast);
-}
 
-.inputWithList:focus {
-  outline: none;
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px var(--primary-100);
-}
+  /* Input with datalist */
+  .inputWithList {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    transition: all var(--transition-fast);
+  }
+
+  .inputWithList:focus {
+    outline: none;
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px var(--primary-100);
+  }
 
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -1112,6 +1127,7 @@
     transform: translateX(400px);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -1239,4 +1255,3 @@
   color: var(--gray-500);
   cursor: not-allowed;
 }
-
