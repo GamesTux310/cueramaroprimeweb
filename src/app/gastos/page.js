@@ -7,6 +7,7 @@ import { getGastos, addGasto, deleteGasto } from '@/lib/storage';
 import { uploadImage } from '@/lib/storageService';
 import ImageModal from '@/components/ImageModal';
 import ImageDropzone from '@/components/ImageDropzone';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import localforage from 'localforage';
 
 export default function GastosPage() {
@@ -405,10 +406,10 @@ export default function GastosPage() {
                 onChange={(e) => setFormGastoFijo({ ...formGastoFijo, nombre: e.target.value })}
                 style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #ddd', marginBottom: '6px', fontSize: '0.85rem', boxSizing: 'border-box' }}
               />
-              <input
-                type="number" placeholder="Monto mensual"
+              <CurrencyInput
+                placeholder="Monto mensual"
                 value={formGastoFijo.monto}
-                onChange={(e) => setFormGastoFijo({ ...formGastoFijo, monto: e.target.value })}
+                onChange={(val) => setFormGastoFijo({ ...formGastoFijo, monto: val })}
                 style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', border: '1px solid #ddd', marginBottom: '6px', fontSize: '0.85rem', boxSizing: 'border-box' }}
               />
               <select
@@ -519,14 +520,10 @@ export default function GastosPage() {
                   </div>
                   <div className={styles.formGroup}>
                     <label>Monto *</label>
-                    <input
-                      type="number"
+                    <CurrencyInput
                       value={formData.monto}
-                      onChange={(e) => setFormData({...formData, monto: e.target.value})}
+                      onChange={(val) => setFormData({...formData, monto: val})}
                       placeholder="0.00"
-                      min="0"
-                      step="0.01"
-                      required
                     />
                   </div>
                 </div>

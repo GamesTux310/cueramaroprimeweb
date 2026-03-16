@@ -22,7 +22,8 @@
     "numero-a-letras": "^1.0.6",
     "qrcode": "^1.5.4",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",

@@ -7,7 +7,7 @@ import { getProductos, addProducto, updateProducto, saveProductos, actualizarSto
 import { compressImageToBase64 } from '@/lib/imageHelper';
 import { parseDecimal, formatearMoneda as formatearMonedaGlobal } from '@/lib/numberToText';
 import ImageModal from '@/components/ImageModal';
-import CurrencyInput from '@/components/CurrencyInput';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import ImageDropzone from '@/components/ImageDropzone';
 
 const categorias = ['Todas', 'Res', 'Cerdo', 'Pollo', 'Embutidos'];
@@ -1075,21 +1075,17 @@ export default function ProductosPage() {
                       <div className={styles.formGroup}>
                         <label>Precio de Compra *</label>
                         <CurrencyInput
-                          name="precioCompra"
                           value={formData.precioCompra}
-                          onChange={handleInputChange}
+                          onChange={(val) => setFormData({...formData, precioCompra: val})}
                           placeholder="0.00"
-                          required
                         />
                       </div>
                       <div className={styles.formGroup}>
                         <label>Precio de Venta *</label>
                         <CurrencyInput
-                          name="precioVenta"
                           value={formData.precioVenta}
-                          onChange={handleInputChange}
+                          onChange={(val) => setFormData({...formData, precioVenta: val})}
                           placeholder="0.00"
-                          required
                         />
                       </div>
                     </div>
@@ -1211,20 +1207,21 @@ export default function ProductosPage() {
                         </select>
                       </div>
                       <div className={styles.formGroup}>
-                        <label>Precio Compra ($)</label>
+                        <label>Precio Unitario de Compra *</label>
                         <CurrencyInput
                           value={precioCompra}
-                          onChange={(e) => setPrecioCompra(e.target.value)}
+                          onChange={(val) => setPrecioCompra(val)}
                           placeholder="0.00"
                         />
                       </div>
                       <div className={styles.formGroup}>
-                        <label>Nuevo Precio Venta ($)</label>
+                        <label>Nuevo Precio Venta *</label>
                         <CurrencyInput
                           value={nuevoPrecioVenta}
-                          onChange={(e) => setNuevoPrecioVenta(e.target.value)}
+                          onChange={(val) => setNuevoPrecioVenta(val)}
                           placeholder="0.00"
                         />
+                        <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '4px' }}>Se actualizará el precio de venta del producto.</p>
                       </div>
 
                       {/* 🆕 Selector de Tipo de Compra (Contado/Crédito) */}
@@ -1534,16 +1531,9 @@ export default function ProductosPage() {
 
                 <div className={styles.formGroup}>
                   <label>Cantidad (KG/U)</label>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    className={styles.input}
+                  <CurrencyInput
                     value={cantidadMerma}
-                    onChange={e => {
-                      if (/^[0-9.,]*$/.test(e.target.value)) {
-                        setCantidadMerma(e.target.value);
-                      }
-                    }}
+                    onChange={(val) => setCantidadMerma(val)}
                     placeholder="0.00"
                     required
                   />

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import styles from './proveedores.module.css';
 import { getProveedores, addProveedor, updateProveedor, saveProveedores, getCompras, addCompra, deleteCompra, getProductos, updateProducto, actualizarStock, registrarAbonoProveedor, deleteProveedorCascade } from '@/lib/storage';
 import { uploadImage } from '@/lib/storageService';
-import CurrencyInput from '@/components/CurrencyInput';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import ActivityCalendar from '@/components/ActivityCalendar';
 import ImageDropzone from '@/components/ImageDropzone';
 
@@ -30,7 +30,7 @@ export default function ProveedoresPage() {
   const [detalleCompra, setDetalleCompra] = useState(null);
   const [compraFormData, setCompraFormData] = useState({
     productoId: '',
-    cantidad: 1,
+    cantidad: '',
     precioCompra: '',
     precioVenta: '',
     tipoCompra: 'contado', // 🆕
@@ -438,7 +438,7 @@ export default function ProveedoresPage() {
   const resetCompraForm = () => {
     setCompraFormData({
       productoId: '',
-      cantidad: 1,
+      cantidad: '',
       precioCompra: '',
       precioVenta: '',
       tipoCompra: 'contado',
@@ -468,8 +468,8 @@ export default function ProveedoresPage() {
         setCompraFormData(prev => ({
           ...prev,
           productoId: value,
-          precioCompra: prod.precioCompra || '',
-          precioVenta: prod.precioVenta || ''
+          precioCompra: prod.precioCompra ? String(prod.precioCompra) : '',
+          precioVenta: prod.precioVenta ? String(prod.precioVenta) : ''
         }));
       }
     }
@@ -823,10 +823,15 @@ export default function ProveedoresPage() {
                       <span style={{ color: '#059669', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
                         💳 Crédito: <strong>{proveedor.diasCredito} días</strong>
                       </span>
-                      {proveedor.limiteCredito && proveedor.limiteCredito > 0 && (
+                      {Number(proveedor.limiteCredito) > 0 && (
                         <span style={{ color: '#059669', fontSize: '0.8rem', marginLeft: '22px' }}>
-                          Límite: ${proveedor.limiteCredito.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                          Límite: ${Number(proveedor.limiteCredito).toLocaleString('es-MX', { minimumFractionDigits: 2 })}
                         </span>
+                      )}
+                      {(Number(proveedor.saldoPendiente) > 0) && (
+                        <div style={{ color: '#ef4444', fontSize: '0.9rem', marginTop: '4px', fontWeight: 'bold' }}>
+                          ⚠️ Saldo Deudor: {formatearMoneda(proveedor.saldoPendiente)}
+                        </div>
                       )}
                     </div>
                   ) : (
@@ -1358,9 +1363,8 @@ export default function ProveedoresPage() {
                         <div className={styles.formGroup}>
                           <label>Límite de Crédito (Opcional)</label>
                           <CurrencyInput
-                            name="limiteCredito"
                             value={formData.limiteCredito}
-                            onChange={handleInputChange}
+                            onChange={(val) => setFormData(prev => ({...prev, limiteCredito: val}))}
                             placeholder="0.00"
                           />
                         </div>
@@ -1525,23 +1529,20 @@ export default function ProveedoresPage() {
 
                   <div className={styles.formGrid}>
                     <div className={styles.formGroup}>
-                      <label>Cantidad *</label>
-                      <input
-                        type="number"
-                        name="cantidad"
+                      <label>Cantidad (KG / PZ / PAQ) *</label>
+                      <CurrencyInput
+                        prefix=""
                         value={compraFormData.cantidad}
-                        onChange={handleCompraInputChange}
-                        min="0.1"
-                        step="any"
+                        onChange={(val) => setCompraFormData(prev => ({...prev, cantidad: val}))}
+                        placeholder="0.00"
                         required
                       />
                     </div>
                     <div className={styles.formGroup}>
                       <label>Costo Unitario ($) *</label>
                       <CurrencyInput
-                        name="precioCompra"
                         value={compraFormData.precioCompra}
-                        onChange={handleCompraInputChange}
+                        onChange={(val) => setCompraFormData(prev => ({...prev, precioCompra: val}))}
                         placeholder="0.00"
                       />
                     </div>
@@ -1550,9 +1551,8 @@ export default function ProveedoresPage() {
                   <div className={styles.formGroup}>
                     <label>Nuevo Precio Venta ($) *</label>
                     <CurrencyInput
-                      name="precioVenta"
                       value={compraFormData.precioVenta}
-                      onChange={handleCompraInputChange}
+                      onChange={(val) => setCompraFormData(prev => ({...prev, precioVenta: val}))}
                       placeholder="0.00"
                     />
                     <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '4px' }}>
@@ -1715,9 +1715,15 @@ export default function ProveedoresPage() {
                   <label>Monto a Pagar</label>
                   <CurrencyInput
                     value={abonoData.monto}
-                    onChange={(e) => setAbonoData({ ...abonoData, monto: e.target.value })}
+                    onChange={(val) => setAbonoData(prev => ({ ...prev, monto: val }))}
                     placeholder="0.00"
-                    className={styles.input}
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      borderRadius: '6px',
+                      border: '1px solid #d1d5db',
+                      background: 'white'
+                    }}
                   />
                 </div>
 
@@ -1726,7 +1732,7 @@ export default function ProveedoresPage() {
                   <select
                     className={styles.input}
                     value={abonoData.metodoPago}
-                    onChange={e => setAbonoData({ ...abonoData, metodoPago: e.target.value })}
+                    onChange={e => setAbonoData(prev => ({ ...prev, metodoPago: e.target.value }))}
                   >
                     <option value="efectivo">Efectivo</option>
                     <option value="transferencia">Transferencia</option>
@@ -1740,7 +1746,7 @@ export default function ProveedoresPage() {
                     type="date"
                     className={styles.input}
                     value={abonoData.fecha}
-                    onChange={e => setAbonoData({ ...abonoData, fecha: e.target.value })}
+                    onChange={e => setAbonoData(prev => ({ ...prev, fecha: e.target.value }))}
                   />
                 </div>
 
@@ -1772,7 +1778,7 @@ export default function ProveedoresPage() {
                   <textarea
                     className={styles.input}
                     value={abonoData.nota}
-                    onChange={e => setAbonoData({ ...abonoData, nota: e.target.value })}
+                    onChange={e => setAbonoData(prev => ({ ...prev, nota: e.target.value }))}
                     rows="2"
                     placeholder="Referencia, folio, etc."
                   />
@@ -1782,9 +1788,9 @@ export default function ProveedoresPage() {
                   <label>Comprobante de Pago (Opcional)</label>
                   <div style={{ marginTop: '8px' }}>
                     <ImageDropzone
-                      onImageSave={(base64) => setAbonoData({ ...abonoData, comprobanteURL: base64 })}
+                      onImageSave={(base64) => setAbonoData(prev => ({ ...prev, comprobanteURL: base64 }))}
                       previewUrl={abonoData.comprobanteURL}
-                      onRemove={() => setAbonoData({ ...abonoData, comprobanteURL: null })}
+                      onRemove={() => setAbonoData(prev => ({ ...prev, comprobanteURL: null }))}
                       label="Arrastra un comprobante aquí o haz clic para seleccionar"
                     />
                   </div>

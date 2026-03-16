@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import styles from '@/app/facturas/facturas.module.css';
+import styles from '../app/ventas/ventas.module.css';
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
 
 export default function FormularioFacturaCompleto({ onSubmit, onCancel, clienteInicial = null }) {
   const [formData, setFormData] = useState({
@@ -144,10 +145,10 @@ export default function FormularioFacturaCompleto({ onSubmit, onCancel, clienteI
           </div>
           <div className={styles.formGroup}>
             <label>Plazo de Pago (días)</label>
-            <input
-              type="number"
+            <CurrencyInput
+              prefix=""
               value={formData.plazoPago}
-              onChange={(e) => setFormData({ ...formData, plazoPago: e.target.value })}
+              onChange={(val) => setFormData({ ...formData, plazoPago: val })}
               min="1"
             />
           </div>
@@ -203,6 +204,7 @@ export default function FormularioFacturaCompleto({ onSubmit, onCancel, clienteI
             />
           </div>
           <div className={styles.formGroup}>
+            <label>Dirección</label> {/* Added missing label */}
             <input
               type="text"
               value={formData.cliente.direccion}
@@ -226,17 +228,14 @@ export default function FormularioFacturaCompleto({ onSubmit, onCancel, clienteI
             />
           </div>
           <div className={styles.formGroup}>
-            <label>C.P.</label>
-            <input
-              type="text"
+            <label>Código Postal *</label>
+            <CurrencyInput
+              prefix=""
               value={formData.cliente.cp}
-              onChange={(e) => setFormData({ 
-                ...formData, 
-                cliente: { ...formData.cliente, cp: e.target.value } 
-              })}
-              placeholder="36960"
-            />
-          </div>
+              onChange={(val) => setFormData({ ...formData, cliente: { ...formData.cliente, cp: val } })}
+              placeholder="Ej: 00000"
+              required
+            /></div>
           <div className={styles.formGroup}>
             <label>R.F.C.</label>
             <input
@@ -299,13 +298,11 @@ export default function FormularioFacturaCompleto({ onSubmit, onCancel, clienteI
           {formData.productos.map((producto, index) => (
             <div key={index} className={styles.tablaRow}>
               <div className={styles.tablaCelda}>
-                <input
-                  type="number"
+                <label className={styles.smallLabel}>Cantidad</label>
+                <CurrencyInput
+                  prefix=""
                   value={producto.cantidad}
-                  onChange={(e) => actualizarProducto(index, 'cantidad', e.target.value)}
-                  placeholder="0"
-                  step="0.01"
-                  min="0"
+                  onChange={(val) => actualizarProducto(index, "cantidad", val)}
                   required
                 />
               </div>
@@ -338,14 +335,11 @@ export default function FormularioFacturaCompleto({ onSubmit, onCancel, clienteI
                 />
               </div>
               <div className={styles.tablaCelda}>
-                <input
-                  type="number"
+                <label className={styles.smallLabel}>Precio</label>
+                <CurrencyInput
                   value={producto.precio}
-                  onChange={(e) => actualizarProducto(index, 'precio', e.target.value)}
+                  onChange={(val) => actualizarProducto(index, "precio", val)}
                   placeholder="0.00"
-                  step="0.01"
-                  min="0"
-                  required
                 />
               </div>
               <div className={styles.tablaCelda}>

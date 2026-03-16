@@ -660,7 +660,13 @@ export default function ClientesPage() {
                                         <button
                                             onClick={() => {
                                                 if (mov.tipo === 'VENTA') setDetalleVenta(mov.raw);
-                                                else setFacturaSeleccionada(mov.raw);
+                                                else if (mov.tipo === 'FACTURA') setFacturaSeleccionada(mov.raw);
+                                                else {
+                                                    // ABONO: buscar la factura asociada al abono
+                                                    const factAbono = facturas.find(f => f.abonoId === mov.raw.id || f.numeroAbono === mov.raw.numeroAbono);
+                                                    if (factAbono) setFacturaSeleccionada(factAbono);
+                                                    else setDetalleVenta({ ...mov.raw, productos: [{ nombre: 'Abono', cantidad: 1, precioVenta: mov.monto }], total: mov.monto });
+                                                }
                                             }}
                                             style={{
                                                 background: '#e0e7ff', color: '#4338ca', border: 'none',

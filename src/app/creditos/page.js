@@ -9,6 +9,8 @@ import ActivityCalendar from '@/components/ActivityCalendar';
 import ImageModal from '@/components/ImageModal';
 import ImageDropzone from '@/components/ImageDropzone';
 
+import { CurrencyInput } from '@/components/ui/CurrencyInput';
+
 export default function CreditosPage() {
   const [clientes, setClientes] = useState([]);
   const [ventas, setVentas] = useState([]);
@@ -28,6 +30,8 @@ export default function CreditosPage() {
   const [mostrarCalendario, setMostrarCalendario] = useState(false);
   const [detalleAbono, setDetalleAbono] = useState(null);
   const [imagenAmpliada, setImagenAmpliada] = useState(null);
+  const [detalleVenta, setDetalleVenta] = useState(null);
+  const [filtroMovimientosGlobal, setFiltroMovimientosGlobal] = useState('todas');
 
   useEffect(() => {
     cargarDatos();
@@ -190,6 +194,50 @@ export default function CreditosPage() {
     ? abonos.filter(a => a.clienteId === clienteSeleccionado.id).slice().reverse()
     : [];
 
+  // Computar últimos movimientos globales
+  let movimientosGlobales = [];
+  if (ventas.length > 0 || facturas.length > 0 || abonos.length > 0) {
+    const ventasG = ventas.map(v => ({
+      tipo: 'VENTA', fecha: v.fecha, monto: v.total, metodo: v.metodoPago,
+      id: v.id, raw: v,
+      descripcion: `Venta - ${v.cliente?.nombre || 'General'}`,
+      folio: facturas.find(f => f.ventaId === v.id)?.numeroFactura || '',
+      clienteNombre: v.cliente?.nombre || 'General',
+      clienteId: v.clienteId
+    }));
+
+    const facturasG = facturas.map(f => ({
+      tipo: 'FACTURA', fecha: f.fecha || f.fechaEmision, monto: f.total, metodo: f.metodoPago,
+      id: f.id, raw: f,
+      descripcion: `Factura ${f.numeroFactura || ''} - ${f.cliente?.nombre || 'Desconocido'}`,
+      folio: f.numeroFactura || '',
+      tipoFactura: f.tipoFactura,
+      clienteNombre: f.cliente?.nombre || 'Desconocido',
+      clienteId: f.clienteId
+    }));
+
+    const abonosG = abonos.map(a => ({
+      tipo: 'ABONO', fecha: a.fecha, monto: a.monto, metodo: a.metodoPago,
+      id: a.id, raw: a,
+      descripcion: `Abono a ${a.clienteNombre || 'Cliente'}`,
+      folio: a.numeroFactura || a.numeroAbono || '',
+      clienteNombre: a.clienteNombre || 'Cliente',
+      clienteId: a.clienteId
+    }));
+
+    movimientosGlobales = [...ventasG, ...facturasG, ...abonosG];
+
+    // Filtro global
+    if (filtroMovimientosGlobal === 'ventas') movimientosGlobales = movimientosGlobales.filter(m => m.tipo === 'VENTA');
+    else if (filtroMovimientosGlobal === 'facturas') movimientosGlobales = movimientosGlobales.filter(m => m.tipo === 'FACTURA');
+    else if (filtroMovimientosGlobal === 'abonos') movimientosGlobales = movimientosGlobales.filter(m => m.tipo === 'ABONO');
+    else if (filtroMovimientosGlobal === 'fc') movimientosGlobales = movimientosGlobales.filter(m => m.tipo === 'FACTURA' && (m.tipoFactura === 'credito' || m.folio.startsWith('FC')));
+    else if (filtroMovimientosGlobal === 'fa') movimientosGlobales = movimientosGlobales.filter(m => m.tipo === 'FACTURA' && (m.tipoFactura !== 'credito' && m.tipoFactura !== 'abono' || m.folio.startsWith('FA')));
+
+    movimientosGlobales.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    movimientosGlobales = movimientosGlobales.slice(0, 15); // Solo últimos 15 globalmente
+  }
+
   return (
     <>
       {/* Toast */}
@@ -247,6 +295,82 @@ export default function CreditosPage() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Detalle Venta */}
+      {detalleVenta && (
+        <div className={styles.modalOverlay} onClick={() => setDetalleVenta(null)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3>🛒 Detalle de la Venta</h3>
+              <button className={styles.closeButton} onClick={() => setDetalleVenta(null)}>×</button>
+            </div>
+            <div className={styles.modalBody}>
+              <div className={styles.detalleRow} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontWeight: 'bold' }}>Venta #:</span>
+                <span>{detalleVenta.id}</span>
+              </div>
+              <div className={styles.detalleRow} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontWeight: 'bold' }}>Fecha:</span>
+                <span>{parsearFecha(detalleVenta.fecha).toLocaleDateString('es-MX')}</span>
+              </div>
+              <div className={styles.detalleRow} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontWeight: 'bold' }}>Factura:</span>
+                {facturas.find(f => f.ventaId === detalleVenta.id) ? (
+                  <Link href="/facturas" style={{ color: '#3b82f6', textDecoration: 'underline' }}>
+                    {facturas.find(f => f.ventaId === detalleVenta.id).numeroFactura} 🔗
+                  </Link>
+                ) : (
+                  <span style={{ color: '#9ca3af' }}>Sin factura</span>
+                )}
+              </div>
+              <div className={styles.detalleRow} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontWeight: 'bold' }}>Cliente:</span>
+                <span>{detalleVenta.clienteNombre || detalleVenta.cliente?.nombre || 'Cliente General'}</span>
+              </div>
+              <div className={styles.detalleRow} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontWeight: 'bold' }}>Método de Pago:</span>
+                <span style={{ textTransform: 'capitalize' }}>{detalleVenta.metodoPago || 'Contado'}</span>
+              </div>
+
+              {/* Productos */}
+              <div style={{ marginTop: '15px' }}>
+                <span style={{ fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>Productos:</span>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                  <thead>
+                    <tr style={{ background: 'rgba(0,0,0,0.05)', textAlign: 'left' }}>
+                      <th style={{ padding: '8px' }}>Prod.</th>
+                      <th style={{ padding: '8px' }}>Cant.</th>
+                      <th style={{ padding: '8px' }}>Precio</th>
+                      <th style={{ padding: '8px' }}>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {detalleVenta.productos?.map((prod, idx) => {
+                      const precio = Number(prod.precioUnitario || prod.precio || 0);
+                      const total = Number(prod.subtotal || (prod.cantidad * precio) || 0);
+                      return (
+                        <tr key={idx} style={{ borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                          <td style={{ padding: '8px' }}>{prod.nombre}</td>
+                          <td style={{ padding: '8px' }}>{prod.cantidad} {prod.unidad}</td>
+                          <td style={{ padding: '8px' }}>{formatearMoneda(precio)}</td>
+                          <td style={{ padding: '8px' }}>{formatearMoneda(total)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className={styles.detalleRow} style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid rgba(0,0,0,0.1)', display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontWeight: 'bold' }}>Total:</span>
+                <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '20px' }}>
+                  {formatearMoneda(detalleVenta.total)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -337,6 +461,87 @@ export default function CreditosPage() {
               <span className={styles.statLabel}>Abonos Hoy</span>
             </div>
           </div>
+        </section>
+
+        {/* Últimos Movimientos Globales */}
+        <section style={{ marginBottom: '20px', background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', border: '1px solid #e5e7eb' }}>
+            <h4 style={{ margin: '0 0 15px 0', color: '#1f2937', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>📊</span> Últimos Movimientos
+            </h4>
+
+            {/* Botones de Filtro Globales */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '15px' }}>
+                {[
+                    { key: 'todas', label: '📋 Todas', color: '#6366f1' },
+                    { key: 'ventas', label: '🛒 Ventas', color: '#3b82f6' },
+                    { key: 'facturas', label: '📄 Facturas', color: '#0ea5e9' },
+                    { key: 'abonos', label: '💰 Abonos', color: '#10b981' },
+                ].map(btn => (
+                    <button
+                        key={btn.key}
+                        onClick={() => setFiltroMovimientosGlobal(btn.key)}
+                        style={{
+                            padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer',
+                            fontSize: '0.85rem', fontWeight: 'bold', transition: 'all 0.2s',
+                            background: filtroMovimientosGlobal === btn.key ? btn.color : '#f3f4f6',
+                            color: filtroMovimientosGlobal === btn.key ? 'white' : '#4b5563',
+                            boxShadow: filtroMovimientosGlobal === btn.key ? `0 2px 8px ${btn.color}66` : 'none'
+                        }}
+                    >
+                        {btn.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Lista de Movimientos */}
+            {movimientosGlobales.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '20px', color: '#6b7280', background: '#f9fafb', borderRadius: '8px' }}>
+                    📭 No hay movimientos recientes con este filtro
+                </div>
+            ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '400px', overflowY: 'auto', paddingRight: '5px' }}>
+                    {movimientosGlobales.map((mov, i) => (
+                        <div key={`${mov.id}-${i}`} style={{
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            padding: '12px 16px', borderRadius: '8px', background: '#f8fafc',
+                            borderLeft: `4px solid ${mov.tipo === 'VENTA' ? '#3b82f6' : mov.tipo === 'FACTURA' ? '#0ea5e9' : '#10b981'}`,
+                            border: '1px solid #f1f5f9',
+                            borderLeftWidth: '4px'
+                        }}>
+                            <div>
+                                <div style={{ fontWeight: 'bold', fontSize: '0.95rem', color: '#1f2937' }}>{mov.descripcion}</div>
+                                <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '4px' }}>
+                                    📅 {mov.fecha} &nbsp;•&nbsp; 👤 <span style={{ color: '#4f46e5', fontWeight: '500' }}>{mov.clienteNombre}</span>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                <div style={{
+                                    fontWeight: 'bold', fontSize: '1.1rem',
+                                    color: mov.tipo === 'VENTA' ? '#1f2937' : mov.tipo === 'ABONO' ? '#10b981' : '#dc2626'
+                                }}>
+                                    {mov.tipo === 'ABONO' ? '+' : ''}{formatearMoneda(mov.monto)}
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        if (mov.tipo === 'VENTA') setDetalleVenta(mov.raw);
+                                        else if (mov.tipo === 'ABONO') setDetalleAbono(mov.raw);
+                                        else setFacturaSeleccionada(mov.raw);
+                                    }}
+                                    style={{
+                                        background: '#e0e7ff', color: '#4338ca', border: 'none',
+                                        padding: '6px 12px', borderRadius: '6px', fontSize: '0.8rem',
+                                        cursor: 'pointer', fontWeight: 'bold', transition: 'background 0.2s'
+                                    }}
+                                    onMouseOver={(e) => e.target.style.background = '#c7d2fe'}
+                                    onMouseOut={(e) => e.target.style.background = '#e0e7ff'}
+                                >
+                                    📄 Ver
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </section>
 
         {/* Filtros */}
@@ -505,17 +710,21 @@ export default function CreditosPage() {
                 <div className={styles.formGroup}>
                   <label>Monto del Abono</label>
                   <div className={styles.montoInput}>
-                    <span className={styles.montoPrefix}>$</span>
-                    <input
-                      type="number"
+                    <CurrencyInput
                       value={montoAbono}
-                      onChange={(e) => setMontoAbono(e.target.value)}
+                      onChange={(val) => setMontoAbono(val ? String(val) : '')}
                       placeholder="0.00"
-                      min="0"
-                      max={facturaParaAbono ? (facturaParaAbono.saldoPendiente !== undefined ? facturaParaAbono.saldoPendiente : facturaParaAbono.total) : clienteSeleccionado.saldoPendiente}
-                      step="0.01"
-                      autoFocus
-                      required
+                      style={{
+                        width: '100%',
+                        padding: '12px 20px',
+                        border: 'none',
+                        fontSize: '32px',
+                        fontWeight: 'bold',
+                        color: '#1f2937',
+                        background: 'transparent',
+                        outline: 'none',
+                        textAlign: 'center'
+                      }}
                     />
                   </div>
                   <div className={styles.montosRapidos}>
